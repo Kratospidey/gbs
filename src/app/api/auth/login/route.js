@@ -1,5 +1,8 @@
 import { supabase } from "@/lib/supabaseClient";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken"; // Import JWT
+
+const JWT_SECRET = process.env.JWT_SECRET; // Your JWT secret key from environment variables
 
 export async function POST(req) {
 	try {
@@ -27,10 +30,15 @@ export async function POST(req) {
 			});
 		}
 
+		// Create JWT token
+		const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, {
+			expiresIn: "1h",
+		});
+
 		return new Response(
 			JSON.stringify({
 				message: "Login successful",
-				user: { id: user.id, username: user.username },
+				token,
 			}),
 			{ status: 200 }
 		);
