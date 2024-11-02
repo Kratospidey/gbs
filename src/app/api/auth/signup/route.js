@@ -1,3 +1,5 @@
+// api/auth/signup/route.js
+
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken"; // Import JWT
 import { supabase } from "@/lib/supabaseClient";
