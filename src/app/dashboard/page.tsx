@@ -1,3 +1,4 @@
+// src/app/dashboard/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -6,24 +7,36 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import client from "@/lib/sanityClient";
 import DarkModeToggle from "@/components/DarkModeToggle";
+import { Button } from "@/components/ui/button";
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-// Define the Post interface
+// Define nested interfaces
+interface Slug {
+  current: string;
+}
+
+interface Asset {
+  url: string;
+  _ref: string;
+}
+
+interface MainImage {
+  asset: Asset;
+}
+
 interface Post {
   _id: string;
   title: string;
-  slug: string;
+  slug: Slug;
   publishedAt: string;
-  mainImage?: {
-    asset: {
-      url: string;
-    };
-  };
+  mainImage?: MainImage;
 }
 
 const DashboardPage: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [filter, setFilter] = useState<"published" | "drafts" | "archived">("published");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
   const { user } = useUser();
 
@@ -33,25 +46,33 @@ const DashboardPage: React.FC = () => {
     const fetchPosts = async () => {
       setIsLoading(true);
       try {
-        let query = "*[_type == 'post' && author._ref == $userId";
+        let query = `*[_type == 'post' && author._ref == $userId`;
 
         switch (filter) {
           case "drafts":
-            query += " && _id in path('drafts.**')";
+            query += ` && _id in path('drafts.**')`;
             break;
           case "archived":
-            query += " && archived == true";
+            query += ` && archived == true`;
             break;
           default:
-            query += " && !(_id in path('drafts.**')) && archived != true";
+            query += ` && !(_id in path('drafts.**')) && archived != true`;
         }
 
-        query += "] | order(publishedAt desc) { _id, title, slug, publishedAt, mainImage{ asset->{ url } } }";
+        query += `] | order(publishedAt desc) {
+          _id,
+          title,
+          slug,
+          publishedAt,
+          mainImage { asset->{ url, _ref } }
+        }`;
 
         const data: Post[] = await client.fetch(query, { userId: user.id });
+        console.log("Fetched posts: ", data); // Debugging statement
         setPosts(data);
       } catch (error) {
         console.error("Error fetching posts: ", error);
+        toast.error("Failed to fetch posts.");
       }
       setIsLoading(false);
     };
@@ -73,34 +94,43 @@ const DashboardPage: React.FC = () => {
           .remove([`public/${fileName}`]);
         if (error) {
           console.error("Error deleting image from Supabase: ", error);
+          toast.error("Failed to delete image from storage.");
         }
       }
       setPosts(posts.filter((post) => post._id !== postId));
+      toast.success("Post deleted successfully!");
     } catch (error) {
       console.error("Error deleting post: ", error);
+      toast.error("Failed to delete post.");
     }
     setIsLoading(false);
   };
 
-  const handleEdit = (slug: string) => {
-    router.push(`/posts/edit/${slug}`);
+  const handleEdit = (slug: { current?: string } | null) => {
+    if (!slug || !slug.current) {
+      console.error("Invalid slug provided");
+      toast.error("Invalid slug provided.");
+      return;
+    }
+    router.push(`/posts/edit/${slug.current}`);
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
+    <div className="max-w-5xl mx-auto p-6 dark:bg-gray-900 dark:text-white">
+      <ToastContainer />
       <DarkModeToggle />
       <h1 className="text-4xl font-bold mb-6 text-foreground">My Posts</h1>
 
       {/* Filter Buttons */}
       <div className="flex justify-center gap-6 mb-8">
         {["Published", "Drafts", "Archived"].map((label) => (
-          <button
+          <Button
             key={label}
             onClick={() => setFilter(label.toLowerCase() as "published" | "drafts" | "archived")}
             className={`tab ${filter === label.toLowerCase() ? "tab-selected" : "tab-default"}`}
           >
             {label}
-          </button>
+          </Button>
         ))}
       </div>
 
@@ -127,18 +157,22 @@ const DashboardPage: React.FC = () => {
                   {new Date(post.publishedAt).toLocaleDateString()}
                 </p>
                 <div className="flex justify-center gap-4 mt-2">
-                  <button
-                    onClick={() => handleEdit(post.slug)}
-                    className="button-base bg-accent text-accent-foreground py-2 px-6"
-                  >
-                    Edit
-                  </button>
-                  <button
+                  {post.slug?.current ? (
+                    <Button
+                      onClick={() => handleEdit(post.slug)}
+                      className="button-base bg-accent text-accent-foreground py-2 px-6"
+                    >
+                      Edit
+                    </Button>
+                  ) : (
+                    <span className="text-muted-foreground">Slug not available</span>
+                  )}
+                  <Button
                     onClick={() => handleDelete(post._id, post.mainImage?.asset?.url)}
                     className="button-base bg-destructive text-destructive-foreground py-2 px-6"
                   >
                     Delete
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

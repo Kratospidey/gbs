@@ -1,8 +1,9 @@
-// src/app/posts/create/page.tsx
+// src/app/posts/edit/[slug]/page.tsx
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -26,48 +27,104 @@ const QuillEditor = dynamic(() => import('@/components/QuillEditor'), {
   ssr: false,
 });
 
-const CreatePost: React.FC = () => {
+interface Post {
+  _id: string;
+  title: string;
+  body: string;
+  mainImage: {
+    asset: {
+      _ref: string;
+      _type: string;
+    };
+  } | null;
+  author: {
+    _ref: string;
+    _type: string;
+  };
+  publishedAt: string;
+  categories: any[];
+  updatedAt?: string;
+}
+
+interface EditPostProps {
+  params: {
+    slug: string;
+  };
+}
+
+const EditPost: React.FC<EditPostProps> = ({ params }) => {
   const { user } = useUser();
+  const router = useRouter();
   const [title, setTitle] = useState<string>('');
   const [content, setContent] = useState<string>('');
   const [mainImage, setMainImage] = useState<File | null>(null);
+  const [existingMainImageUrl, setExistingMainImageUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [postId, setPostId] = useState<string>('');
+
+  useEffect(() => {
+    // Fetch the post based on slug
+    const fetchPost = async () => {
+      try {
+        const fetchedPost: Post = await client.fetch(
+          `*[_type == "post" && slug.current == $slug][0]`,
+          { slug: params.slug }
+        );
+
+        if (fetchedPost) {
+          setPostId(fetchedPost._id);
+          setTitle(fetchedPost.title);
+          setContent(fetchedPost.body || ''); // Ensure content is not undefined
+          
+          if (fetchedPost.mainImage?.asset._ref) {
+            // Assuming the _ref is in the format 'image-<hash>-<extension>'
+            // and Supabase storage path is 'public/<hash>.<extension>'
+            const imageRef = fetchedPost.mainImage.asset._ref;
+            // Parse the imageRef to extract the hash and extension
+            // Example: 'image-abc123-def456.png'
+            const match = imageRef.match(/^image-([a-zA-Z0-9]+)-([a-zA-Z0-9]+)\.(jpg|jpeg|png|gif)$/);
+            if (match) {
+              const hash = match[1];
+              const extension = match[3];
+              const fileName = `${hash}.${extension}`;
+              const { data: urlData } = supabase
+                .storage
+                .from('post_banners')
+                .getPublicUrl(`public/${fileName}`);
+
+              if (!urlData) {
+                console.error('Error getting public URL');
+              } else if (urlData.publicUrl) { // Use 'publicUrl' with lowercase 'u'
+                setExistingMainImageUrl(urlData.publicUrl);
+              }
+            } else {
+              console.error('Unexpected image ref format:', imageRef);
+            }
+          }
+        } else {
+          alert('Post not found.');
+          router.push('/posts');
+        }
+      } catch (error) {
+        console.error('Error fetching post:', error);
+        alert('Failed to fetch post. Please try again.');
+        router.push('/posts');
+      }
+    };
+
+    fetchPost();
+  }, [params.slug, router]);
 
   const handleSubmit = async () => {
     if (!user) {
-      alert('You need to be logged in to create a post.');
+      alert('You need to be logged in to edit a post.');
       return;
     }
 
     setIsLoading(true);
     let mainImageRef: string = '';
 
-    // Check if user exists in Sanity
-    try {
-      const existingUser = await client.fetch(
-        `*[_type == "author" && _id == $userId][0]`,
-        { userId: user.id }
-      );
-
-      // If the user does not exist, create the user in Sanity
-      if (!existingUser) {
-        const newUser = {
-          _type: 'author',
-          _id: user.id,
-          name: user.username || 'Anonymous',
-        };
-
-        await client.create(newUser);
-        console.log('User created in Sanity:', newUser);
-      }
-    } catch (error) {
-      console.error('Error checking or creating user in Sanity:', error);
-      alert('Failed to check or create user. Please try again.');
-      setIsLoading(false);
-      return;
-    }
-
-    // Handle main image upload to Supabase and Sanity
+    // Handle main image upload if a new image is selected
     if (mainImage) {
       try {
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -85,7 +142,7 @@ const CreatePost: React.FC = () => {
         }
 
         if (uploadData) {
-          // Optionally, you can also store the image in Sanity if needed
+          // Upload the image to Sanity and get its reference
           const imageUploadResponse = await client.assets.upload('image', mainImage);
           mainImageRef = imageUploadResponse._id;
         }
@@ -97,37 +154,28 @@ const CreatePost: React.FC = () => {
       }
     }
 
-    // Create new post in Sanity
-    const newPost = {
-      _type: 'post',
+    // Update the post in Sanity
+    const updatedPost: Partial<Post> = {
       title: title,
       body: content, // 'content' contains HTML with image URLs
-      author: {
-        _type: 'reference',
-        _ref: user.id,
-      },
       mainImage: mainImageRef
         ? {
-            _type: 'image',
             asset: {
               _ref: mainImageRef,
               _type: 'reference',
             },
           }
-        : null,
-      publishedAt: new Date().toISOString(),
-      categories: [],
+        : undefined, // Do not update if no new image
+      updatedAt: new Date().toISOString(),
     };
 
     try {
-      await client.create(newPost);
-      alert('Post created successfully!');
-      setTitle('');
-      setContent('');
-      setMainImage(null);
+      await client.patch(postId).set(updatedPost).commit();
+      alert('Post updated successfully!');
+      router.push(`/posts/${params.slug}`);
     } catch (error) {
-      console.error('Failed to create post in Sanity:', error);
-      alert('Failed to create post. Please try again.');
+      console.error('Failed to update post in Sanity:', error);
+      alert('Failed to update post. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -138,9 +186,9 @@ const CreatePost: React.FC = () => {
       <DarkModeToggle />
       <Card className="dark:bg-gray-800 dark:border-gray-700">
         <CardHeader>
-          <CardTitle className="dark:text-white">Create a New Post</CardTitle>
+          <CardTitle className="dark:text-white">Edit Post</CardTitle>
           <CardDescription className="dark:text-gray-300">
-            Fill in the details to create a new blog post.
+            Modify the details of your blog post.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -167,6 +215,9 @@ const CreatePost: React.FC = () => {
               <Label htmlFor="mainImage" className="dark:text-white">
                 Main Image
               </Label>
+              {existingMainImageUrl && (
+                <img src={existingMainImageUrl} alt="Existing Main Image" className="mb-2 w-full h-auto" />
+              )}
               <Input
                 type="file"
                 accept="image/*"
@@ -188,7 +239,7 @@ const CreatePost: React.FC = () => {
               isLoading ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
-            {isLoading ? 'Submitting...' : 'Submit'}
+            {isLoading ? 'Updating...' : 'Update'}
           </Button>
         </CardFooter>
       </Card>
@@ -196,4 +247,4 @@ const CreatePost: React.FC = () => {
   );
 };
 
-export default CreatePost;
+export default EditPost;

@@ -1,43 +1,32 @@
-// src/components/QuillEditor.tsx
-"use client"; // Make sure to use 'use client' to make this a client-side component
+import React from 'react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 
-import dynamic from "next/dynamic";
-import React, { useEffect, useState, useRef } from "react";
+interface QuillEditorProps {
+  initialValue?: string;
+  onChange: (value: string) => void;
+}
 
-// Dynamically import react-quill with SSR disabled
-const ReactQuill = dynamic(() => import("react-quill"), { ssr: false });
-import "react-quill/dist/quill.snow.css"; // Import styles for the Quill editor
+const QuillEditor: React.FC<QuillEditorProps> = ({ initialValue = '', onChange }) => {
+  // Ensure initialValue is always a string
+  const sanitizedValue = typeof initialValue === 'string' ? initialValue : '';
 
-const QuillEditor: React.FC<{
-	onChange: (content: string) => void;
-	initialValue?: string;
-}> = ({ onChange, initialValue }) => {
-	const [content, setContent] = useState(initialValue || "");
-
-	const handleChange = (value: string) => {
-		setContent(value);
-		onChange(value);
-	};
-
-	return (
-		<div>
-			{typeof window !== "undefined" && (
-				<ReactQuill
-					theme="snow"
-					value={content}
-					onChange={handleChange}
-					modules={{
-						toolbar: [
-							["bold", "italic", "underline"],
-							[{ list: "ordered" }, { list: "bullet" }],
-							["link", "image"],
-							[{ header: [1, 2, false] }],
-						],
-					}}
-				/>
-			)}
-		</div>
-	);
+  return (
+    <ReactQuill
+      theme="snow"
+      value={sanitizedValue}
+      onChange={onChange}
+      modules={{
+        toolbar: [
+          [{ 'header': [1, 2, 3, false] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          ['link', 'image'],
+          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+          ['clean']
+        ],
+      }}
+    />
+  );
 };
 
 export default QuillEditor;
