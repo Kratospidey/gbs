@@ -13,24 +13,32 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import client from '@/lib/sanityClient';
+import client, { urlFor } from '@/lib/sanityClient';
 import { supabase } from '@/lib/supabaseClient';
 import { useUser } from '@clerk/nextjs';
 import { v4 as uuidv4 } from 'uuid';
 import DarkModeToggle from '@/components/DarkModeToggle';
 import MarkdownEditor from '@/components/MarkdownEditor';
 
-
 interface Post {
   _id: string;
   title: string;
   body: string;
-  mainImage: {
-    asset: {
-      _ref: string;
-      _type: string;
-    };
-  } | null;
+  mainImage:
+    | {
+        _type: 'image';
+        asset: {
+          _ref: string; // For references when updating
+          _type: 'reference';
+        };
+      }
+    | {
+        asset: {
+          _id: string;
+          url: string; // For fetched images with URLs
+        };
+      }
+    | null;
   author: {
     _ref: string;
     _type: string;
@@ -62,16 +70,24 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
         // Log the slug we're querying
         console.log('Fetching post with slug:', params.slug);
 
-        // Modify query to explicitly select all fields we need
-        const fetchedPost = await client.fetch(`
+        // Modify query to explicitly select all fields we need, including image URL
+        const fetchedPost = await client.fetch(
+          `
           *[_type == "post" && slug.current == $slug][0] {
             _id,
             title,
             body,
-            mainImage,
+            mainImage {
+              asset-> {
+                _id,
+                url
+              }
+            },
             "slug": slug.current
           }
-        `, { slug: params.slug });
+          `,
+          { slug: params.slug }
+        );
 
         // Log the fetched post
         console.log('Fetched post:', fetchedPost);
@@ -87,31 +103,10 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
             console.log('No body content found');
             setContent('');
           }
-          
-          if (fetchedPost.mainImage?.asset?._ref) {
-            // Assuming the _ref is in the format 'image-<hash>-<extension>'
-            // and Supabase storage path is 'public/<hash>.<extension>'
-            const imageRef = fetchedPost.mainImage.asset._ref;
-            // Parse the imageRef to extract the hash and extension
-            // Example: 'image-abc123-def456.png'
-            const match = imageRef.match(/^image-([a-zA-Z0-9]+)-([a-zA-Z0-9]+)\.(jpg|jpeg|png|gif)$/);
-            if (match) {
-              const hash = match[1];
-              const extension = match[3];
-              const fileName = `${hash}.${extension}`;
-              const { data: urlData } = supabase
-                .storage
-                .from('post_banners')
-                .getPublicUrl(`public/${fileName}`);
 
-              if (!urlData) {
-                console.error('Error getting public URL');
-              } else if (urlData.publicUrl) { // Use 'publicUrl' with lowercase 'u'
-                setExistingMainImageUrl(urlData.publicUrl);
-              }
-            } else {
-              console.error('Unexpected image ref format:', imageRef);
-            }
+          // Handle existing image
+          if (fetchedPost.mainImage?.asset?.url) {
+            setExistingMainImageUrl(fetchedPost.mainImage.asset.url);
           }
         } else {
           alert('Post not found.');
@@ -169,15 +164,19 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
     // Update the post in Sanity
     const updatedPost: Partial<Post> = {
       title: title,
-      body: content, // 'content' contains HTML with image URLs
-      mainImage: mainImageRef
+      body: content, // 'content' contains markdown
+      // Only update mainImage if a new one is selected
+      ...(mainImage
         ? {
-            asset: {
-              _ref: mainImageRef,
-              _type: 'reference',
+            mainImage: {
+              _type: 'image',
+              asset: {
+                _ref: mainImageRef,
+                _type: 'reference',
+              },
             },
           }
-        : undefined, // Do not update if no new image
+        : {}),
       updatedAt: new Date().toISOString(),
     };
 
@@ -222,10 +221,10 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
                 Content
               </Label>
               <div className="prose-container border rounded-md p-4 dark:bg-gray-700">
-              <MarkdownEditor 
-                initialContent={content} 
-                onChange={(newContent) => setContent(newContent)} 
-              />
+                <MarkdownEditor
+                  initialContent={content}
+                  onChange={(newContent) => setContent(newContent)}
+                />
               </div>
             </div>
             <div>
@@ -233,10 +232,10 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
                 Main Image
               </Label>
               {existingMainImageUrl && (
-                <img 
-                  src={existingMainImageUrl} 
-                  alt="Existing Main Image" 
-                  className="mb-2 w-full h-auto" 
+                <img
+                  src={existingMainImageUrl}
+                  alt="Existing Main Image"
+                  className="mb-2 w-full h-auto"
                 />
               )}
               <Input
