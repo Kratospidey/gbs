@@ -45,7 +45,8 @@ interface Post {
   };
   publishedAt: string;
   categories: any[];
-  _updatedAt: string
+  _updatedAt: string;
+  status: string; // Add status field
 }
 
 interface EditPostProps {
@@ -166,6 +167,7 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
     const updatedPost: Partial<Post> = {
       title: title,
       body: content, // 'content' contains markdown
+      status: 'pending', // Always set to pending on create/update
       // Only update mainImage if a new one is selected
       ...(mainImage
         ? {

@@ -111,6 +111,7 @@ const CreatePost: React.FC = () => {
         : null,
       publishedAt: new Date().toISOString(),
       categories: [],
+      status: 'pending', // Always set to pending on create/update
     };
 
     try {

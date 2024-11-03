@@ -31,11 +31,12 @@ interface Post {
   slug: Slug;
   publishedAt: string;
   mainImage?: MainImage;
+  status: 'pending' | 'published' | 'draft' | 'archived';
 }
 
 const DashboardPage: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
-  const [filter, setFilter] = useState<"published" | "drafts" | "archived">("published");
+  const [filter, setFilter] = useState<"published" | "drafts" | "archived" | "pending">("published");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
   const { user } = useUser();
@@ -50,13 +51,16 @@ const DashboardPage: React.FC = () => {
 
         switch (filter) {
           case "drafts":
-            query += ` && _id in path('drafts.**')`;
+            query += ` && status == 'draft'`;
             break;
           case "archived":
-            query += ` && archived == true`;
+            query += ` && status == 'archived'`;
             break;
-          default:
-            query += ` && !(_id in path('drafts.**')) && archived != true`;
+          case "pending":
+            query += ` && status == 'pending'`;
+            break;
+          default: // published
+            query += ` && status == 'published'`;
         }
 
         query += `] | order(publishedAt desc) {
@@ -64,6 +68,7 @@ const DashboardPage: React.FC = () => {
           title,
           slug,
           publishedAt,
+          status,
           mainImage { asset->{ url, _ref } }
         }`;
 
@@ -115,6 +120,26 @@ const DashboardPage: React.FC = () => {
     router.push(`/posts/edit/${slug.current}`);
   };
 
+  const handleArchive = async (postId: string) => {
+    const confirmArchive = window.confirm("Are you sure you want to archive this post?");
+    if (!confirmArchive) return;
+
+    setIsLoading(true);
+    try {
+      await client
+        .patch(postId)
+        .set({ status: 'archived' })
+        .commit();
+      
+      setPosts(posts.filter(post => post._id !== postId));
+      toast.success("Post archived successfully!");
+    } catch (error) {
+      console.error("Error archiving post: ", error);
+      toast.error("Failed to archive post.");
+    }
+    setIsLoading(false);
+  };
+
   return (
     <div className="max-w-5xl mx-auto p-6 dark:bg-gray-900 dark:text-white">
       <ToastContainer />
@@ -123,10 +148,10 @@ const DashboardPage: React.FC = () => {
 
       {/* Filter Buttons */}
       <div className="flex justify-center gap-6 mb-8">
-        {["Published", "Drafts", "Archived"].map((label) => (
+        {["Published", "Pending", "Drafts", "Archived"].map((label) => (
           <Button
             key={label}
-            onClick={() => setFilter(label.toLowerCase() as "published" | "drafts" | "archived")}
+            onClick={() => setFilter(label.toLowerCase() as "published" | "pending" | "drafts" | "archived")}
             className={`tab ${filter === label.toLowerCase() ? "tab-selected" : "tab-default"}`}
           >
             {label}
@@ -157,19 +182,28 @@ const DashboardPage: React.FC = () => {
                   {new Date(post.publishedAt).toLocaleDateString()}
                 </p>
                 <div className="flex justify-center gap-4 mt-2">
-                  {post.slug?.current ? (
+                  {post.slug?.current && (
                     <Button
                       onClick={() => handleEdit(post.slug)}
-                      className="button-base bg-accent text-accent-foreground py-2 px-6"
+                      disabled={post.status === 'pending'}
+                      className="button-base bg-accent text-accent-foreground py-2 px-6 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Edit
                     </Button>
-                  ) : (
-                    <span className="text-muted-foreground">Slug not available</span>
+                  )}
+                  {post.status !== 'archived' && (
+                    <Button
+                      onClick={() => handleArchive(post._id)}
+                      disabled={post.status === 'pending'}
+                      className="bg-amber-500 hover:bg-amber-600 text-white dark:bg-amber-600 dark:hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Archive
+                    </Button>
                   )}
                   <Button
                     onClick={() => handleDelete(post._id, post.mainImage?.asset?.url)}
-                    className="button-base bg-destructive text-destructive-foreground py-2 px-6"
+                    disabled={post.status === 'pending'}
+                    className="bg-red-600 hover:bg-red-700 text-white dark:bg-red-700 dark:hover:bg-red-800 py-2 px-6 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Delete
                   </Button>

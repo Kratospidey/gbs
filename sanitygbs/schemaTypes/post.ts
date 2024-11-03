@@ -59,6 +59,20 @@ export default defineType({
       type: 'text',
       description: 'Write your content in markdown format',
     }),
+    defineField({
+      name: 'status',
+      title: 'Status',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'Pending', value: 'pending' },
+          { title: 'Published', value: 'published' },
+          { title: 'Draft', value: 'draft' },
+          { title: 'Archived', value: 'archived' }
+        ]
+      },
+      initialValue: 'pending'
+    })
   ],
 
   preview: {
