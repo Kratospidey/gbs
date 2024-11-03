@@ -15,4 +15,6 @@ export default defineConfig({
   schema: {
     types: schemaTypes,
   },
+
+  token: process.env.NEXT_PUBLIC_SANITY_API_TOKEN,
 })

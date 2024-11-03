@@ -1,12 +1,10 @@
 // src/app/posts/create/page.tsx
-
 'use client';
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import dynamic from 'next/dynamic';
 import {
   Card,
   CardContent,
@@ -18,13 +16,9 @@ import {
 import client from '@/lib/sanityClient';
 import { supabase } from '@/lib/supabaseClient';
 import { useUser } from '@clerk/nextjs';
-import { v4 as uuidv4 } from 'uuid'; // Ensure uuidv4 is imported
+import { v4 as uuidv4 } from 'uuid';
 import DarkModeToggle from '@/components/DarkModeToggle';
-
-// Dynamically import QuillEditor with SSR disabled
-const QuillEditor = dynamic(() => import('@/components/QuillEditor'), {
-  ssr: false,
-});
+import TipTapEditor from '@/components/MarkdownEditor';
 
 const CreatePost: React.FC = () => {
   const { user } = useUser();
@@ -134,7 +128,7 @@ const CreatePost: React.FC = () => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 dark:bg-gray-900 dark:text-white">
+    <div className="max-w-4xl mx-auto p-6 dark:bg-gray-900 dark:text-white">
       <DarkModeToggle />
       <Card className="dark:bg-gray-800 dark:border-gray-700">
         <CardHeader>
@@ -152,7 +146,7 @@ const CreatePost: React.FC = () => {
               <Input
                 id="title"
                 value={title}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
+                onChange={(e) => setTitle(e.target.value)}
                 placeholder="Enter post title"
                 className="dark:bg-gray-700 dark:text-white"
               />
@@ -161,7 +155,12 @@ const CreatePost: React.FC = () => {
               <Label htmlFor="content" className="dark:text-white">
                 Content
               </Label>
-              <QuillEditor initialValue={content} onChange={setContent} />
+              <div className="prose-container border rounded-md p-4 dark:bg-gray-700">
+                <TipTapEditor 
+                  initialContent=""
+                  onChange={setContent}
+                />
+              </div>
             </div>
             <div>
               <Label htmlFor="mainImage" className="dark:text-white">
@@ -170,8 +169,8 @@ const CreatePost: React.FC = () => {
               <Input
                 type="file"
                 accept="image/*"
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  if (e.target.files && e.target.files[0]) {
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
                     setMainImage(e.target.files[0]);
                   }
                 }}
@@ -184,9 +183,7 @@ const CreatePost: React.FC = () => {
           <Button
             onClick={handleSubmit}
             disabled={isLoading}
-            className={`dark:bg-gray-700 dark:text-white ${
-              isLoading ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
+            className="dark:bg-gray-700 dark:text-white"
           >
             {isLoading ? 'Submitting...' : 'Submit'}
           </Button>

@@ -1,3 +1,5 @@
+import { write } from 'fs';
+import { wrap } from 'module';
 import { defineField, defineType } from 'sanity';
 
 export default defineType({
@@ -18,14 +20,7 @@ export default defineType({
       options: {
         source: 'title',
         maxLength: 96,
-        slugify: (input) =>
-          input
-            .toLowerCase()
-            .replace(/\s+/g, '-')
-            .replace(/[^\w\-]+/g, '') // Remove any non-word characters for safety
-            .slice(0, 96), // Ensuring the slug doesn't exceed max length
       },
-      validation: (Rule) => Rule.required().error("Slug is required. Please enter a unique value."),
     }),
     defineField({
       name: 'author',
@@ -60,8 +55,9 @@ export default defineType({
     }),
     defineField({
       name: 'body',
-      title: 'Body',
-      type: 'blockContent',
+      title: 'Content',
+      type: 'text',
+      description: 'Write your content in markdown format',
     }),
   ],
 
@@ -75,5 +71,5 @@ export default defineType({
       const { author } = selection;
       return { ...selection, subtitle: author ? `by ${author}` : '' };
     },
-  },
+  }
 });

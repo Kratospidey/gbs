@@ -1,13 +1,10 @@
-// src/app/posts/edit/[slug]/page.tsx
-
-'use client';
+"use client";
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import dynamic from 'next/dynamic';
 import {
   Card,
   CardContent,
@@ -19,13 +16,10 @@ import {
 import client from '@/lib/sanityClient';
 import { supabase } from '@/lib/supabaseClient';
 import { useUser } from '@clerk/nextjs';
-import { v4 as uuidv4 } from 'uuid'; // Ensure uuidv4 is imported
+import { v4 as uuidv4 } from 'uuid';
 import DarkModeToggle from '@/components/DarkModeToggle';
+import MarkdownEditor from '@/components/MarkdownEditor';
 
-// Dynamically import QuillEditor with SSR disabled
-const QuillEditor = dynamic(() => import('@/components/QuillEditor'), {
-  ssr: false,
-});
 
 interface Post {
   _id: string;
@@ -63,20 +57,38 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
   const [postId, setPostId] = useState<string>('');
 
   useEffect(() => {
-    // Fetch the post based on slug
     const fetchPost = async () => {
       try {
-        const fetchedPost: Post = await client.fetch(
-          `*[_type == "post" && slug.current == $slug][0]`,
-          { slug: params.slug }
-        );
+        // Log the slug we're querying
+        console.log('Fetching post with slug:', params.slug);
+
+        // Modify query to explicitly select all fields we need
+        const fetchedPost = await client.fetch(`
+          *[_type == "post" && slug.current == $slug][0] {
+            _id,
+            title,
+            body,
+            mainImage,
+            "slug": slug.current
+          }
+        `, { slug: params.slug });
+
+        // Log the fetched post
+        console.log('Fetched post:', fetchedPost);
 
         if (fetchedPost) {
           setPostId(fetchedPost._id);
-          setTitle(fetchedPost.title);
-          setContent(fetchedPost.body || ''); // Ensure content is not undefined
+          setTitle(fetchedPost.title || '');
+          // Ensure body content is being set
+          if (fetchedPost.body) {
+            console.log('Setting content:', fetchedPost.body);
+            setContent(fetchedPost.body);
+          } else {
+            console.log('No body content found');
+            setContent('');
+          }
           
-          if (fetchedPost.mainImage?.asset._ref) {
+          if (fetchedPost.mainImage?.asset?._ref) {
             // Assuming the _ref is in the format 'image-<hash>-<extension>'
             // and Supabase storage path is 'public/<hash>.<extension>'
             const imageRef = fetchedPost.mainImage.asset._ref;
@@ -106,8 +118,8 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
           router.push('/posts');
         }
       } catch (error) {
-        console.error('Error fetching post:', error);
-        alert('Failed to fetch post. Please try again.');
+        console.error('Error details:', error);
+        alert('Failed to fetch post');
         router.push('/posts');
       }
     };
@@ -182,7 +194,7 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 dark:bg-gray-900 dark:text-white">
+    <div className="max-w-4xl mx-auto p-6 dark:bg-gray-900 dark:text-white">
       <DarkModeToggle />
       <Card className="dark:bg-gray-800 dark:border-gray-700">
         <CardHeader>
@@ -200,7 +212,7 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
               <Input
                 id="title"
                 value={title}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTitle(e.target.value)}
+                onChange={(e) => setTitle(e.target.value)}
                 placeholder="Enter post title"
                 className="dark:bg-gray-700 dark:text-white"
               />
@@ -209,20 +221,29 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
               <Label htmlFor="content" className="dark:text-white">
                 Content
               </Label>
-              <QuillEditor initialValue={content} onChange={setContent} />
+              <div className="prose-container border rounded-md p-4 dark:bg-gray-700">
+              <MarkdownEditor 
+                initialContent={content} 
+                onChange={(newContent) => setContent(newContent)} 
+              />
+              </div>
             </div>
             <div>
               <Label htmlFor="mainImage" className="dark:text-white">
                 Main Image
               </Label>
               {existingMainImageUrl && (
-                <img src={existingMainImageUrl} alt="Existing Main Image" className="mb-2 w-full h-auto" />
+                <img 
+                  src={existingMainImageUrl} 
+                  alt="Existing Main Image" 
+                  className="mb-2 w-full h-auto" 
+                />
               )}
               <Input
                 type="file"
                 accept="image/*"
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  if (e.target.files && e.target.files[0]) {
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
                     setMainImage(e.target.files[0]);
                   }
                 }}
@@ -235,9 +256,7 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
           <Button
             onClick={handleSubmit}
             disabled={isLoading}
-            className={`dark:bg-gray-700 dark:text-white ${
-              isLoading ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
+            className="dark:bg-gray-700 dark:text-white"
           >
             {isLoading ? 'Updating...' : 'Update'}
           </Button>
