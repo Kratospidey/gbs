@@ -45,7 +45,7 @@ interface Post {
   };
   publishedAt: string;
   categories: any[];
-  updatedAt?: string;
+  _updatedAt: string
 }
 
 interface EditPostProps {
@@ -83,7 +83,8 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
                 url
               }
             },
-            "slug": slug.current
+            "slug": slug.current,
+            _updatedAt
           }
           `,
           { slug: params.slug }
@@ -177,7 +178,6 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
             },
           }
         : {}),
-      updatedAt: new Date().toISOString(),
     };
 
     try {

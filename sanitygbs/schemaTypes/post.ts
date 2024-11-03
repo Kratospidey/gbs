@@ -59,11 +59,6 @@ export default defineType({
       type: 'text',
       description: 'Write your content in markdown format',
     }),
-    defineField({
-      name: 'updatedAt',
-      title: 'Updated At',
-      type: 'datetime',
-    }),
   ],
 
   preview: {
