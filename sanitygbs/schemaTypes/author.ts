@@ -40,6 +40,26 @@ export default defineType({
         },
       ],
     }),
+    defineField({
+      name: 'clerk_id',
+      title: 'Clerk ID',
+      type: 'string',
+    }),
+    defineField({
+      name: 'linkedin',
+      title: 'LinkedIn URL',
+      type: 'url',
+    }),
+    defineField({
+      name: 'github',
+      title: 'GitHub URL',
+      type: 'url',
+    }),
+    defineField({
+      name: 'website',
+      title: 'Personal Website',
+      type: 'url',
+    }),
   ],
   preview: {
     select: {

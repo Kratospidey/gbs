@@ -1,6 +1,5 @@
 // app/profile/page.tsx
 
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -11,7 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import DarkModeToggle from "@/components/DarkModeToggle";
-
+import { toast } from "react-toastify";
+import { syncUserProfile } from "@/lib/syncUserProfile";
+import { z } from "zod"; // For validation
 
 import {
 	Card,
@@ -22,6 +23,21 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 
+// URL validation schema
+const urlSchema = z.string().url().or(z.literal(""));
+
+// Add type definition at the top of the file
+interface UserProfileData {
+	user_id: string;
+	first_name: string;
+	last_name: string;
+	bio: string;
+	profile_picture?: string;
+	github?: string;
+	linkedin?: string;
+	custom_link?: string;
+}
+
 const ProfilePage: React.FC = () => {
 	const { user } = useUser();
 	const [profile, setProfile] = useState<any>({
@@ -29,6 +45,9 @@ const ProfilePage: React.FC = () => {
 		lastName: "",
 		bio: "",
 		profilePicture: "",
+		githubUrl: "",
+		linkedinUrl: "",
+		customUrl: "",
 	});
 	const [isLoading, setIsLoading] = useState(false);
 	const [newProfilePic, setNewProfilePic] = useState<File | null>(null);
@@ -39,6 +58,9 @@ const ProfilePage: React.FC = () => {
 		lastName: "",
 		bio: "",
 		profilePicture: "",
+		githubUrl: "",
+		linkedinUrl: "",
+		customUrl: "",
 	});
 
 	useEffect(() => {
@@ -56,6 +78,9 @@ const ProfilePage: React.FC = () => {
 						lastName: data.last_name || "",
 						bio: data.bio || "",
 						profilePicture: data.profile_picture || "",
+						githubUrl: data.github || "",
+						linkedinUrl: data.linkedin || "",
+						customUrl: data.custom_link || "",
 					};
 					setProfile(initialProfile);
 					setOriginalProfile(initialProfile);
@@ -91,32 +116,53 @@ const ProfilePage: React.FC = () => {
 			}
 		}
 
-		const { error } = await supabase.from("user_profiles").upsert({
-			user_id: user?.id,
+		if (!user?.id) return;
+
+		const profileData: UserProfileData = {
+			user_id: user.id,
 			first_name: profile.firstName,
 			last_name: profile.lastName,
 			bio: profile.bio,
 			profile_picture: profilePictureUrl,
-		});
+			github: profile.githubUrl,
+			linkedin: profile.linkedinUrl,
+			custom_link: profile.customUrl,
+		};
 
-		if (error) {
-			console.error("Error updating profile: ", error);
-		} else {
-			alert("Profile updated successfully!");
+		console.log("Sending profile data:", profileData);
+
+		const result = await syncUserProfile(profileData);
+
+		if (result) {
+			toast.success("Profile updated successfully!");
 			setOriginalProfile(profile);
-			setIsChanged(false);
+		} else {
+			toast.error("Failed to update profile");
 		}
 
 		setIsLoading(false);
+		setIsChanged(false);
 	};
 
 	const handleInputChange = (field: string, value: string) => {
+		if (field.includes("Url")) {
+			try {
+				urlSchema.parse(value);
+			} catch (error) {
+				toast.error("Please enter a valid URL");
+				return;
+			}
+		}
+
 		setProfile((prev: any) => {
 			const updatedProfile = { ...prev, [field]: value };
 			setIsChanged(
 				updatedProfile.firstName !== originalProfile.firstName ||
 					updatedProfile.lastName !== originalProfile.lastName ||
 					updatedProfile.bio !== originalProfile.bio ||
+					updatedProfile.githubUrl !== originalProfile.githubUrl ||
+					updatedProfile.linkedinUrl !== originalProfile.linkedinUrl ||
+					updatedProfile.customUrl !== originalProfile.customUrl ||
 					(newProfilePic
 						? true
 						: updatedProfile.profilePicture !== originalProfile.profilePicture)
@@ -205,6 +251,45 @@ const ProfilePage: React.FC = () => {
 							value={profile.lastName}
 							onChange={(e) => handleInputChange("lastName", e.target.value)}
 							className="dark:bg-gray-700 dark:text-white"
+						/>
+					</div>
+
+					<div className="mb-4">
+						<Label htmlFor="githubUrl" className="dark:text-white">
+							GitHub URL
+						</Label>
+						<Input
+							id="githubUrl"
+							value={profile.githubUrl}
+							onChange={(e) => handleInputChange("githubUrl", e.target.value)}
+							className="dark:bg-gray-700 dark:text-white"
+							placeholder="https://github.com/username"
+						/>
+					</div>
+
+					<div className="mb-4">
+						<Label htmlFor="linkedinUrl" className="dark:text-white">
+							LinkedIn URL
+						</Label>
+						<Input
+							id="linkedinUrl"
+							value={profile.linkedinUrl}
+							onChange={(e) => handleInputChange("linkedinUrl", e.target.value)}
+							className="dark:bg-gray-700 dark:text-white"
+							placeholder="https://linkedin.com/in/username"
+						/>
+					</div>
+
+					<div className="mb-4">
+						<Label htmlFor="customUrl" className="dark:text-white">
+							Custom URL
+						</Label>
+						<Input
+							id="customUrl"
+							value={profile.customUrl}
+							onChange={(e) => handleInputChange("customUrl", e.target.value)}
+							className="dark:bg-gray-700 dark:text-white"
+							placeholder="https://your-website.com"
 						/>
 					</div>
 

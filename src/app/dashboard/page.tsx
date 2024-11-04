@@ -169,45 +169,62 @@ const DashboardPage: React.FC = () => {
               key={post._id}
               className="group relative neomorph-card p-6"
             >
-              {post.mainImage?.asset?.url && (
-                <img
-                  src={post.mainImage.asset.url}
-                  alt={post.title}
-                  className="w-full h-48 object-cover mb-4 rounded-md shadow-sm transition-transform transform hover:scale-105"
-                />
-              )}
-              <div className="text-center">
-                <h2 className="text-xl font-bold text-card-foreground mb-2">{post.title}</h2>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {new Date(post.publishedAt).toLocaleDateString()}
-                </p>
-                <div className="flex justify-center gap-4 mt-2">
-                  {post.slug?.current && (
-                    <Button
-                      onClick={() => handleEdit(post.slug)}
-                      disabled={post.status === 'pending'}
-                      className="button-base bg-accent text-accent-foreground py-2 px-6 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Edit
-                    </Button>
-                  )}
-                  {post.status !== 'archived' && (
-                    <Button
-                      onClick={() => handleArchive(post._id)}
-                      disabled={post.status === 'pending'}
-                      className="bg-amber-500 hover:bg-amber-600 text-white dark:bg-amber-600 dark:hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Archive
-                    </Button>
-                  )}
-                  <Button
-                    onClick={() => handleDelete(post._id, post.mainImage?.asset?.url)}
-                    disabled={post.status === 'pending'}
-                    className="bg-red-600 hover:bg-red-700 text-white dark:bg-red-700 dark:hover:bg-red-800 py-2 px-6 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Delete
-                  </Button>
+              {/* Clickable area for blog post */}
+              <div
+                onClick={() => router.push(`/posts/${post.slug.current}`)}
+                className="cursor-pointer"
+              >
+                {post.mainImage?.asset?.url && (
+                  <img
+                    src={post.mainImage.asset.url}
+                    alt={post.title}
+                    className="w-full h-48 object-cover mb-4 rounded-md shadow-sm transition-transform transform hover:scale-105"
+                  />
+                )}
+                <div className="text-center">
+                  <h2 className="text-xl font-bold text-card-foreground mb-2">{post.title}</h2>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    {new Date(post.publishedAt).toLocaleDateString()}
+                  </p>
                 </div>
+              </div>
+              
+              {/* Button container with stopPropagation */}
+              <div className="flex justify-center gap-4 mt-2">
+                {post.slug?.current && (
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEdit(post.slug);
+                    }}
+                    disabled={post.status === 'pending'}
+                    className="button-base bg-accent text-accent-foreground py-2 px-6 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Edit
+                  </Button>
+                )}
+                {post.status !== 'archived' && (
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleArchive(post._id);
+                    }}
+                    disabled={post.status === 'pending'}
+                    className="bg-amber-500 hover:bg-amber-600 text-white dark:bg-amber-600 dark:hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Archive
+                  </Button>
+                )}
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(post._id, post.mainImage?.asset?.url);
+                  }}
+                  disabled={post.status === 'pending'}
+                  className="bg-red-600 hover:bg-red-700 text-white dark:bg-red-700 dark:hover:bg-red-800 py-2 px-6 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Delete
+                </Button>
               </div>
             </div>
           ))
