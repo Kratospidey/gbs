@@ -13,6 +13,7 @@ import { FaBookmark } from "react-icons/fa";
 import { User2 } from "lucide-react";
 import { FaLinkedin, FaGithub, FaGlobe } from "react-icons/fa";
 import { toast } from "react-hot-toast";
+import Link from "next/link";
 
 interface Post {
 	_id: string;
@@ -164,22 +165,26 @@ const PostDetailPage = () => {
 				{/* Author and Meta Info */}
 				<div className="flex items-center justify-between mb-8 border-b pb-8">
 					<div className="flex items-center space-x-4">
-						<Avatar className="h-12 w-12">
-							<AvatarImage
-								src={
-									post.author?.profile_picture ||
-									"https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"
-								}
-								alt={post.author?.name || "Author"}
-							/>
-							<AvatarFallback>
-								{post.author?.name?.[0]?.toUpperCase() || "?"}
-							</AvatarFallback>
-						</Avatar>
+						<Link href={`/profile/${post.author?.name?.toLowerCase()}`}>
+							<Avatar className="h-12 w-12 cursor-pointer hover:opacity-80 transition-opacity">
+								<AvatarImage
+									src={
+										post.author?.profile_picture ||
+										"https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"
+									}
+									alt={post.author?.name || "Author"}
+								/>
+								<AvatarFallback>
+									{post.author?.name?.[0]?.toUpperCase() || "?"}
+								</AvatarFallback>
+							</Avatar>
+						</Link>
 						<div>
-							<h3 className="font-medium text-gray-900 dark:text-gray-100">
-								{post.author?.name}
-							</h3>
+							<Link href={`/profile/${post.author?.name?.toLowerCase()}`}>
+								<h3 className="font-medium text-gray-900 dark:text-gray-100 hover:underline cursor-pointer">
+									{post.author?.name}
+								</h3>
+							</Link>
 							<div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
 								<span className="flex items-center">
 									<Calendar className="w-4 h-4 mr-1" />
