@@ -10,6 +10,7 @@ import { MoonIcon, SunIcon } from "@radix-ui/react-icons";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
+import { Tag } from "@/components/Tag";
 
 // Update UserProfile interface to match Supabase columns
 interface UserProfile {
@@ -31,6 +32,7 @@ interface UserPost {
 	created_at: string;
 	image_url?: string;
 	slug: string;
+	tags?: string[];
 }
 
 const UserProfilePage = () => {
@@ -172,6 +174,11 @@ const UserProfilePage = () => {
 											<p className="text-gray-600 dark:text-gray-400 mt-2">
 												{new Date(post.created_at).toLocaleDateString()}
 											</p>
+											<div className="flex flex-wrap mt-2">
+												{post.tags?.map((tag: string) => (
+													<Tag key={tag} text={tag} />
+												))}
+											</div>
 										</div>
 									</div>
 								</Link>

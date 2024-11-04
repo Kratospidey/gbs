@@ -14,6 +14,7 @@ import { User2 } from "lucide-react";
 import { FaLinkedin, FaGithub, FaGlobe } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
+import { Tag } from "@/components/Tag";
 
 interface Post {
 	_id: string;
@@ -27,6 +28,7 @@ interface Post {
 	body: string;
 	author: Author;
 	estimatedReadingTime?: number;
+	tags: string[];
 }
 
 interface Author {
@@ -79,6 +81,7 @@ const PostDetailPage = () => {
                 asset->{url}
               }
             },
+            tags,
             "estimatedReadingTime": round(length(body) / 5 / 180 )
           }
         `,
@@ -224,6 +227,11 @@ const PostDetailPage = () => {
 					>
 						{post.body}
 					</ReactMarkdown>
+				</div>
+				<div className="flex flex-wrap mt-4">
+					{post.tags?.map((tag) => (
+						<Tag key={tag} text={tag} />
+					))}
 				</div>
 			</div>
 			<>

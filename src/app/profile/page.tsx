@@ -13,6 +13,7 @@ import DarkModeToggle from "@/components/DarkModeToggle";
 import { toast } from "react-toastify";
 import { syncUserProfile } from "@/lib/syncUserProfile";
 import { z } from "zod"; // For validation
+import { useRouter } from "next/navigation";
 
 import {
 	Card,
@@ -39,7 +40,10 @@ interface UserProfileData {
 }
 
 const ProfilePage: React.FC = () => {
-	const { user } = useUser();
+	const { user, isLoaded } = useUser();
+	const router = useRouter();
+
+	// Move all useState declarations here, before any conditionals
 	const [profile, setProfile] = useState<any>({
 		firstName: "",
 		lastName: "",
@@ -52,7 +56,6 @@ const ProfilePage: React.FC = () => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [newProfilePic, setNewProfilePic] = useState<File | null>(null);
 	const [isChanged, setIsChanged] = useState(false);
-
 	const [originalProfile, setOriginalProfile] = useState<any>({
 		firstName: "",
 		lastName: "",
@@ -63,6 +66,14 @@ const ProfilePage: React.FC = () => {
 		customUrl: "",
 	});
 
+	// Auth check effect
+	useEffect(() => {
+		if (isLoaded && !user) {
+			router.push('/signin');
+		}
+	}, [isLoaded, user, router]);
+
+	// Profile fetch effect
 	useEffect(() => {
 		const fetchUserProfile = async () => {
 			if (user?.id) {
@@ -92,6 +103,15 @@ const ProfilePage: React.FC = () => {
 
 		fetchUserProfile();
 	}, [user]);
+
+	// Loading state
+	if (!isLoaded || !user) {
+		return (
+			<div className="min-h-screen flex items-center justify-center dark:bg-gray-900">
+				<div className="text-lg text-gray-600 dark:text-gray-300">Loading...</div>
+			</div>
+		);
+	}
 
 	const handleUpdateProfile = async () => {
 		setIsLoading(true);

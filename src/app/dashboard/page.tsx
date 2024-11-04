@@ -10,6 +10,7 @@ import DarkModeToggle from "@/components/DarkModeToggle";
 import { Button } from "@/components/ui/button";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { Tag } from "@/components/Tag";
 
 // Define nested interfaces
 interface Slug {
@@ -32,20 +33,27 @@ interface Post {
   publishedAt: string;
   mainImage?: MainImage;
   status: 'pending' | 'published' | 'draft' | 'archived';
+  tags?: string[];
 }
 
 const DashboardPage: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [filter, setFilter] = useState<"published" | "drafts" | "archived" | "pending">("published");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true); // Changed to true initially
   const router = useRouter();
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
+
+  // Add auth check effect
+  useEffect(() => {
+    if (isLoaded && !user) {
+      router.push("/signin");
+    }
+  }, [isLoaded, user, router]);
 
   useEffect(() => {
     if (!user) return;
 
     const fetchPosts = async () => {
-      setIsLoading(true);
       try {
         let query = `*[_type == 'post' && author._ref == $userId`;
 
@@ -69,7 +77,8 @@ const DashboardPage: React.FC = () => {
           slug,
           publishedAt,
           status,
-          mainImage { asset->{ url, _ref } }
+          mainImage { asset->{ url, _ref } },
+          tags
         }`;
 
         const data: Post[] = await client.fetch(query, { userId: user.id });
@@ -84,6 +93,15 @@ const DashboardPage: React.FC = () => {
 
     fetchPosts();
   }, [user, filter]);
+
+  // Show loading state during auth check
+  if (!isLoaded || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center dark:bg-gray-900">
+        <div className="text-lg text-gray-600 dark:text-gray-300">Loading...</div>
+      </div>
+    );
+  }
 
   const handleDelete = async (postId: string, imageUrl: string | undefined) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this post?");
@@ -171,18 +189,25 @@ const DashboardPage: React.FC = () => {
             >
               {/* Clickable area for blog post */}
               <div
-                onClick={() => router.push(`/posts/${post.slug.current}`)}
-                className="cursor-pointer"
+                onClick={() => post.status !== 'pending' ? router.push(`/posts/${post.slug.current}`) : null}
+                className={`cursor-${post.status === 'pending' ? 'not-allowed' : 'pointer'} 
+                ${post.status === 'pending' ? 'opacity-70' : ''}`}
               >
                 {post.mainImage?.asset?.url && (
                   <img
                     src={post.mainImage.asset.url}
                     alt={post.title}
-                    className="w-full h-48 object-cover mb-4 rounded-md shadow-sm transition-transform transform hover:scale-105"
+                    className={`w-full h-48 object-cover mb-4 rounded-md shadow-sm 
+                    ${post.status !== 'pending' ? 'transition-transform transform hover:scale-105' : ''}`}
                   />
                 )}
                 <div className="text-center">
-                  <h2 className="text-xl font-bold text-card-foreground mb-2">{post.title}</h2>
+                  <h2 className="text-xl font-bold text-card-foreground mb-2">
+                    {post.title}
+                    {post.status === 'pending' && (
+                      <span className="ml-2 text-sm text-amber-500">(Pending Review)</span>
+                    )}
+                  </h2>
                   <p className="text-sm text-muted-foreground mb-4">
                     {new Date(post.publishedAt).toLocaleDateString()}
                   </p>
@@ -225,6 +250,11 @@ const DashboardPage: React.FC = () => {
                 >
                   Delete
                 </Button>
+              </div>
+              <div className="flex flex-wrap mt-2">
+                {post.tags?.map((tag) => (
+                  <Tag key={tag} text={tag} />
+                ))}
               </div>
             </div>
           ))

@@ -19,6 +19,7 @@ import { useUser } from '@clerk/nextjs';
 import { v4 as uuidv4 } from 'uuid';
 import DarkModeToggle from '@/components/DarkModeToggle';
 import MarkdownEditor from '@/components/MarkdownEditor';
+import { Tag } from '@/components/Tag';
 
 interface Post {
   _id: string;
@@ -47,6 +48,7 @@ interface Post {
   categories: any[];
   _updatedAt: string;
   status: string; // Add status field
+  tags: string[]; // Add tags field
 }
 
 interface EditPostProps {
@@ -56,25 +58,31 @@ interface EditPostProps {
 }
 
 const EditPost: React.FC<EditPostProps> = ({ params }) => {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const router = useRouter();
+
+  // 1. Group all state declarations
   const [title, setTitle] = useState<string>('');
   const [content, setContent] = useState<string>('');
   const [mainImage, setMainImage] = useState<File | null>(null);
   const [existingMainImageUrl, setExistingMainImageUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [postId, setPostId] = useState<string>('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+
+  // 2. Group all effects together
+  useEffect(() => {
+    if (isLoaded && !user) {
+      router.push(`/signin`);
+    }
+  }, [isLoaded, user, router, params.slug]);
 
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        // Log the slug we're querying
-        console.log('Fetching post with slug:', params.slug);
-
-        // Modify query to explicitly select all fields we need, including image URL
         const fetchedPost = await client.fetch(
-          `
-          *[_type == "post" && slug.current == $slug][0] {
+          `*[_type == "post" && slug.current == $slug][0] {
             _id,
             title,
             body,
@@ -84,29 +92,18 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
                 url
               }
             },
+            tags,
             "slug": slug.current,
             _updatedAt
-          }
-          `,
+          }`,
           { slug: params.slug }
         );
-
-        // Log the fetched post
-        console.log('Fetched post:', fetchedPost);
 
         if (fetchedPost) {
           setPostId(fetchedPost._id);
           setTitle(fetchedPost.title || '');
-          // Ensure body content is being set
-          if (fetchedPost.body) {
-            console.log('Setting content:', fetchedPost.body);
-            setContent(fetchedPost.body);
-          } else {
-            console.log('No body content found');
-            setContent('');
-          }
-
-          // Handle existing image
+          setContent(fetchedPost.body || '');
+          setTags(fetchedPost.tags || []);
           if (fetchedPost.mainImage?.asset?.url) {
             setExistingMainImageUrl(fetchedPost.mainImage.asset.url);
           }
@@ -123,6 +120,27 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 
     fetchPost();
   }, [params.slug, router]);
+
+  // 3. Place loading state check after all hooks
+  if (!isLoaded || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center dark:bg-gray-900">
+        <div className="text-lg text-gray-600 dark:text-gray-300">Loading...</div>
+      </div>
+    );
+  }
+
+  // 4. Helper functions
+  const handleTagInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const tag = tagInput.trim().toLowerCase();
+      if (tag && !tags.includes(tag)) {
+        setTags([...tags, tag]);
+      }
+      setTagInput('');
+    }
+  };
 
   const handleSubmit = async () => {
     if (!user) {
@@ -168,6 +186,7 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
       title: title,
       body: content, // 'content' contains markdown
       status: 'pending', // Always set to pending on create/update
+      tags: tags, // Add this line
       // Only update mainImage if a new one is selected
       ...(mainImage
         ? {
@@ -249,6 +268,26 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
                   }
                 }}
                 className="dark:bg-gray-700 dark:text-white"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block mb-2">Tags</label>
+              <div className="flex flex-wrap mb-2">
+                {tags.map((tag) => (
+                  <Tag 
+                    key={tag} 
+                    text={tag}
+                    onClick={() => setTags(tags.filter(t => t !== tag))}
+                  />
+                ))}
+              </div>
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagInput}
+                placeholder="Add tags (press Enter or comma to add)"
+                className="w-full p-2 border rounded"
               />
             </div>
           </div>
