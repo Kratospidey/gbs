@@ -11,7 +11,6 @@ export default defineType({
       name: 'title',
       title: 'Title',
       type: 'string',
-      validation: (Rule) => Rule.required().min(5).warning("Title should be at least 5 characters."),
     }),
     defineField({
       name: 'slug',
@@ -26,42 +25,26 @@ export default defineType({
       name: 'author',
       title: 'Author',
       type: 'reference',
-      to: { type: 'author' },
+      to: [{ type: 'author' }],
     }),
     defineField({
       name: 'mainImage',
-      title: 'Main image',
+      title: 'Main Image',
       type: 'image',
       options: {
         hotspot: true,
       },
     }),
     defineField({
-      name: 'categories',
-      title: 'Categories',
-      type: 'array',
-      of: [{ type: 'reference', to: { type: 'category' } }],
-    }),
-    defineField({
       name: 'tags',
       title: 'Tags',
       type: 'array',
       of: [{ type: 'string' }],
-      options: {
-        layout: 'tags'
-      },
-      validation: Rule => Rule.unique()
     }),
     defineField({
       name: 'publishedAt',
-      title: 'Published at',
+      title: 'Published At',
       type: 'datetime',
-    }),
-    defineField({
-      name: 'body',
-      title: 'Content',
-      type: 'text',
-      description: 'Write your content in markdown format',
     }),
     defineField({
       name: 'status',
@@ -75,7 +58,6 @@ export default defineType({
           { title: 'Archived', value: 'archived' }
         ]
       },
-      initialValue: 'pending'
     })
   ],
 
