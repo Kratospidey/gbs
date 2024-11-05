@@ -58,6 +58,7 @@
 		"remark": "^15.0.1",
 		"remark-html": "^16.0.1",
 		"sanity": "^3.56.0",
+		"sanity-plugin-markdown": "^5.0.0",
 		"shadcn-ui": "^0.2.3",
 		"slate": "^0.47.9",
 		"slate-html-serializer": "^0.8.13",

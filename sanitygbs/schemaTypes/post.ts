@@ -1,6 +1,6 @@
-import { write } from 'fs';
-import { wrap } from 'module';
-import { defineField, defineType } from 'sanity';
+import {write} from 'fs'
+import {wrap} from 'module'
+import {defineField, defineType} from 'sanity'
 
 export default defineType({
   name: 'post',
@@ -25,7 +25,8 @@ export default defineType({
       name: 'author',
       title: 'Author',
       type: 'reference',
-      to: [{ type: 'author' }],
+
+      to: [{type: 'author'}],
     }),
     defineField({
       name: 'mainImage',
@@ -39,7 +40,7 @@ export default defineType({
       name: 'tags',
       title: 'Tags',
       type: 'array',
-      of: [{ type: 'string' }],
+      of: [{type: 'string'}],
     }),
     defineField({
       name: 'publishedAt',
@@ -47,18 +48,23 @@ export default defineType({
       type: 'datetime',
     }),
     defineField({
+      name: 'body',
+      title: 'write text here',
+      type: 'markdown',
+    }),
+    defineField({
       name: 'status',
       title: 'Status',
       type: 'string',
       options: {
         list: [
-          { title: 'Pending', value: 'pending' },
-          { title: 'Published', value: 'published' },
-          { title: 'Draft', value: 'draft' },
-          { title: 'Archived', value: 'archived' }
-        ]
+          {title: 'Pending', value: 'pending'},
+          {title: 'Published', value: 'published'},
+          {title: 'Draft', value: 'draft'},
+          {title: 'Archived', value: 'archived'},
+        ],
       },
-    })
+    }),
   ],
 
   preview: {
@@ -68,8 +74,8 @@ export default defineType({
       media: 'mainImage',
     },
     prepare(selection) {
-      const { author } = selection;
-      return { ...selection, subtitle: author ? `by ${author}` : '' };
+      const {author} = selection
+      return {...selection, subtitle: author ? `by ${author}` : ''}
     },
-  }
-});
+  },
+})
