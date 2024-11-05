@@ -34,14 +34,34 @@ const Navbar: React.FC = () => {
 				return;
 			}
 
+			const lowerQuery = query.toLowerCase();
+
 			try {
-				const results = await client.fetch<SearchResult[]>(`
-          *[_type == "post" && title match "${query}*"] {
+				// Adjusted search patterns using glob wildcards
+				const searchTerms = {
+					exact: lowerQuery,
+					prefix: `${lowerQuery}*`,
+					contains: `*${lowerQuery}*`,
+					fuzzy: `*${lowerQuery.split("").join("*")}*`,
+				};
+
+				const results = await client.fetch<SearchResult[]>(
+					`
+          *[_type == "post" && title != null] {
             _id,
             title,
-            slug
-          }[0...5]
-        `);
+            slug,
+            "score": select(
+              lower(title) == $exact => 4,
+              lower(title) match $prefix => 3,
+              lower(title) match $contains => 2,
+              lower(title) match $fuzzy => 1,
+              0
+            )
+          }[score > 0] | order(score desc, title asc)[0...5]
+          `,
+					searchTerms
+				);
 
 				setSearchResults(results);
 			} catch (error) {
