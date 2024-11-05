@@ -1,17 +1,71 @@
 // components/Navbar.tsx
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Cog, User, LayoutDashboard, Bookmark } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 import { useUser, useClerk } from "@clerk/nextjs";
+import client from "@/lib/sanityClient";
+import debounce from "lodash/debounce";
+
+interface SearchResult {
+	_id: string;
+	title: string;
+	slug: {
+		current: string;
+	};
+}
 
 const Navbar: React.FC = () => {
 	const { user, isLoaded, isSignedIn } = useUser();
 	const clerk = useClerk();
 	const [isCogOpen, setIsCogOpen] = useState(false);
 	const [isProfileOpen, setIsProfileOpen] = useState(false);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+	const [showResults, setShowResults] = useState(false);
+
+	// Debounced search function
+	const debouncedSearch = useCallback(
+		debounce(async (query: string) => {
+			if (query.length < 2) {
+				setSearchResults([]);
+				return;
+			}
+
+			try {
+				const results = await client.fetch<SearchResult[]>(`
+          *[_type == "post" && title match "${query}*"] {
+            _id,
+            title,
+            slug
+          }[0...5]
+        `);
+
+				setSearchResults(results);
+			} catch (error) {
+				console.error("Search error:", error);
+				setSearchResults([]);
+			}
+		}, 300),
+		[]
+	);
+
+	// Handle search input change
+	const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const query = e.target.value;
+		setSearchQuery(query);
+		debouncedSearch(query);
+		setShowResults(true);
+	};
+
+	// Close search results when clicking outside
+	useEffect(() => {
+		const handleClickOutside = () => setShowResults(false);
+		document.addEventListener("click", handleClickOutside);
+		return () => document.removeEventListener("click", handleClickOutside);
+	}, []);
 
 	const toggleCog = () => setIsCogOpen(!isCogOpen);
 	const toggleProfile = () => setIsProfileOpen(!isProfileOpen);
@@ -57,12 +111,35 @@ const Navbar: React.FC = () => {
 					{/* Right Section */}
 					<div className="flex items-center space-x-4">
 						{/* Search Bar */}
-						<input
-							type="text"
-							placeholder="Search..."
-							className="hidden md:block px-3 py-2 border rounded-md focus:outline-none focus:ring focus:border-blue-300"
-							disabled
-						/>
+						<div className="relative" onClick={(e) => e.stopPropagation()}>
+							<input
+								type="text"
+								value={searchQuery}
+								onChange={handleSearchChange}
+								onFocus={() => setShowResults(true)}
+								placeholder="Search posts..."
+								className="w-64 px-3 py-2 border rounded-md focus:outline-none focus:ring focus:border-blue-300 dark:bg-gray-700 dark:text-white"
+							/>
+
+							{/* Search Results Dropdown */}
+							{showResults && searchResults.length > 0 && (
+								<div className="absolute w-full mt-1 bg-white dark:bg-gray-700 border rounded-md shadow-lg max-h-60 overflow-auto">
+									{searchResults.map((result) => (
+										<Link
+											key={result._id}
+											href={`/posts/${result.slug.current}`}
+											className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-white"
+											onClick={() => {
+												setShowResults(false);
+												setSearchQuery("");
+											}}
+										>
+											{result.title}
+										</Link>
+									))}
+								</div>
+							)}
+						</div>
 
 						{isSignedIn && (
 							<>
