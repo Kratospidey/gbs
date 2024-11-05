@@ -60,7 +60,9 @@
 		"shadcn-ui": "^0.2.3",
 		"slate": "^0.47.9",
 		"slate-html-serializer": "^0.8.13",
+		"slugify": "^1.6.6",
 		"styled-components": "^6.1.13",
+		"svix": "^1.37.0",
 		"tailwind-merge": "^2.5.4",
 		"tailwindcss-animate": "^1.0.7",
 		"uuid": "^10.0.0"

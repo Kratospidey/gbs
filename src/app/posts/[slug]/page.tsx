@@ -47,9 +47,16 @@ interface PostDetail extends Post {
 }
 
 const getSupabaseImageUrl = (path: string | undefined) => {
-	if (!path) return undefined;
+	if (!path) return "/default-avatar.png";
+
+	// If it's already a full URL, return it
+	if (path.startsWith("http")) {
+		return path;
+	}
+
+	// If it's a storage path, get the public URL
 	const { data } = supabase.storage.from("user_pfp").getPublicUrl(path);
-	return data?.publicUrl;
+	return data?.publicUrl || "/default-avatar.png";
 };
 
 const PostDetailPage = () => {
@@ -71,15 +78,10 @@ const PostDetailPage = () => {
             mainImage{
               asset->{url}
             },
-            author->{
-              name,
-              clerk_id,
-              linkedin,
-              github,
-              website,
-              image{
-                asset->{url}
-              }
+            "author": {
+              "name": author->name,
+              "clerk_id": author->_id, // Use _id since we're storing clerk_id there
+              "profile_picture": author->profile_picture,  // Add this line
             },
             tags,
             "estimatedReadingTime": round(length(body) / 5 / 180 )
@@ -88,21 +90,26 @@ const PostDetailPage = () => {
 					{ slug }
 				);
 
-				// console.log("Raw Sanity data:", data); // Add this log
+				console.log("Sanity author data:", data?.author); // Add this log
 
 				// Fetch author profile from Supabase
 				if (data?.author?.clerk_id) {
-					const { data: profileData } = await supabase
+					console.log("Querying Supabase with clerk_id:", data.author.clerk_id);
+
+					const { data: profileData, error } = await supabase
 						.from("user_profiles")
-						.select("profile_picture")
+						.select("profile_picture, user_id")
 						.eq("user_id", data.author.clerk_id)
 						.single();
 
-					if (profileData) {
+					console.log("Supabase query result:", { profileData, error });
+
+					if (profileData?.profile_picture) {
 						data.author = {
 							...data.author,
 							profile_picture: profileData.profile_picture,
 						};
+						console.log("Updated author data:", data.author);
 					}
 				}
 
@@ -171,10 +178,21 @@ const PostDetailPage = () => {
 						<Link href={`/profile/${post.author?.name?.toLowerCase()}`}>
 							<Avatar className="h-12 w-12 cursor-pointer hover:opacity-80 transition-opacity">
 								<AvatarImage
-									src={
-										post.author?.profile_picture ||
-										"https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"
-									}
+									src={(() => {
+										if (!post.author?.profile_picture) return "/default-avatar.png";
+										
+										// If it's already a full URL (from Supabase), use it directly
+										if (post.author.profile_picture.startsWith('http')) {
+											return post.author.profile_picture;
+										}
+									
+										// If it's a relative path, construct Supabase URL
+										const { data } = supabase.storage
+											.from("user_pfp")
+											.getPublicUrl(`public/${post.author.clerk_id}/${post.author.profile_picture}`);
+									
+										return data?.publicUrl || "/default-avatar.png";
+									})()}
 									alt={post.author?.name || "Author"}
 								/>
 								<AvatarFallback>
@@ -229,9 +247,7 @@ const PostDetailPage = () => {
 					</ReactMarkdown>
 				</div>
 				<div className="flex flex-wrap mt-4">
-					{post.tags?.map((tag) => (
-						<Tag key={tag} text={tag} />
-					))}
+					{post.tags?.map((tag) => <Tag key={tag} text={tag} />)}
 				</div>
 			</div>
 			<>

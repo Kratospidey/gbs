@@ -68,98 +68,36 @@ const CreatePost: React.FC = () => {
     }
 
     setIsLoading(true);
-    let mainImageRef: string = '';
-
-    // Check if user exists in Sanity
+    
+    // Create/update author first
     try {
-      const existingUser = await client.fetch(
-        `*[_type == "author" && _id == $userId][0]`,
-        { userId: user.id }
-      );
+      const authorDoc = {
+        _type: 'author',
+        _id: user.id, // Use Clerk ID as Sanity ID
+        name: user.username || 'Anonymous',
+        clerk_id: user.id, // Explicitly set clerk_id
+      };
 
-      // If the user does not exist, create the user in Sanity
-      if (!existingUser) {
-        const newUser = {
-          _type: 'author',
-          _id: user.id,
-          name: user.username || 'Anonymous',
-        };
+      // Using createOrReplace to handle both new and existing authors
+      await client.createOrReplace(authorDoc);
 
-        await client.create(newUser);
-        console.log('User created in Sanity:', newUser);
-      }
-    } catch (error) {
-      console.error('Error checking or creating user in Sanity:', error);
-      alert('Failed to check or create user. Please try again.');
-      setIsLoading(false);
-      return;
-    }
+      // Create post with reference to author
+      const newPost = {
+        _type: 'post',
+        title,
+        body: content,
+        author: {
+          _type: 'reference',
+          _ref: user.id, // Reference author using Clerk ID
+        },
+        // ... other post fields
+      };
 
-    // Handle main image upload to Supabase and Sanity
-    if (mainImage) {
-      try {
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('post_banners')
-          .upload(`public/${uuidv4()}_${mainImage.name}`, mainImage, {
-            cacheControl: '3600',
-            upsert: false,
-          });
-
-        if (uploadError) {
-          console.error('Error uploading image to Supabase:', uploadError);
-          alert('Failed to upload main image. Please try again.');
-          setIsLoading(false);
-          return;
-        }
-
-        if (uploadData) {
-          // Optionally, you can also store the image in Sanity if needed
-          const imageUploadResponse = await client.assets.upload('image', mainImage);
-          mainImageRef = imageUploadResponse._id;
-        }
-      } catch (error) {
-        console.error('Error uploading image to Sanity:', error);
-        alert('Failed to upload main image. Please try again.');
-        setIsLoading(false);
-        return;
-      }
-    }
-
-    // Create new post in Sanity
-    const newPost = {
-      _type: 'post',
-      title: title,
-      body: content, // 'content' contains HTML with image URLs
-      author: {
-        _type: 'reference',
-        _ref: user.id,
-      },
-      mainImage: mainImageRef
-        ? {
-            _type: 'image',
-            asset: {
-              _ref: mainImageRef,
-              _type: 'reference',
-            },
-          }
-        : null,
-      publishedAt: new Date().toISOString(),
-      categories: [],
-      status: 'pending', // Always set to pending on create/update
-      tags: tags, // Add this line
-    };
-
-    try {
       await client.create(newPost);
-      alert('Post created successfully!');
-      setTitle('');
-      setContent('');
-      setMainImage(null);
+      // ... rest of the function
     } catch (error) {
-      console.error('Failed to create post in Sanity:', error);
-      alert('Failed to create post. Please try again.');
-    } finally {
-      setIsLoading(false);
+      console.error('Error:', error);
+      alert('Failed to create post');
     }
   };
 

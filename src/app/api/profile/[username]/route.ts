@@ -11,7 +11,8 @@ export async function GET(
 	try {
 		console.log("API: Fetching user", params.username); // Debug log
 
-		const clerkResponse = await clerkClient.users.getUserList({
+		const clerk = await clerkClient();
+		const clerkResponse = await clerk.users.getUserList({
 			username: [params.username],
 		});
 

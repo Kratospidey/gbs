@@ -77,26 +77,47 @@ const ProfilePage: React.FC = () => {
 	useEffect(() => {
 		const fetchUserProfile = async () => {
 			if (user?.id) {
-				const { data, error } = await supabase
+				let { data, error } = await supabase
 					.from("user_profiles")
 					.select("*")
 					.eq("user_id", user.id)
 					.single();
+
+				if (error) {
+					// Initialize profile if it doesn't exist
+					await syncUserProfile({
+						user_id: user.id,
+						first_name: user.firstName || '',
+						last_name: user.lastName || '',
+						bio: '',
+						profile_picture: '/default-avatar.png',
+						github: '',
+						linkedin: '',
+						custom_link: ''
+					});
+					
+					// Fetch again after initialization
+					const { data: newData } = await supabase
+						.from("user_profiles")
+						.select("*")
+						.eq("user_id", user.id)
+						.single();
+						
+					if (newData) data = newData;
+				}
 
 				if (data) {
 					const initialProfile = {
 						firstName: data.first_name || "",
 						lastName: data.last_name || "",
 						bio: data.bio || "",
-						profilePicture: data.profile_picture || "",
+						profilePicture: data.profile_picture || "/default-avatar.png",
 						githubUrl: data.github || "",
 						linkedinUrl: data.linkedin || "",
 						customUrl: data.custom_link || "",
 					};
 					setProfile(initialProfile);
 					setOriginalProfile(initialProfile);
-				} else if (error) {
-					console.error("Error fetching profile: ", error);
 				}
 			}
 		};
