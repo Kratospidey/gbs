@@ -18,15 +18,44 @@ export async function DELETE(request: NextRequest) {
 	}
 
 	try {
-		// Get Clerk user
-		const user = await clerkClient.users.getUser(userId);
-		const username = user.username;
+		// Delete Clerk user
+		await clerkClient.users.deleteUser(userId);
 
-		if (!username) {
-			return NextResponse.json(
-				{ message: "Username not found" },
-				{ status: 400 }
+		// Fetch the author document from Sanity
+		const author = await sanityClient.fetch(
+			`*[_type == "author" && _id == $userId][0]`,
+			{ userId }
+		);
+
+		if (author) {
+			const authorId = author._id;
+
+			// Begin Sanity transaction
+			let transaction = sanityClient.transaction();
+
+			// Delete savedPost documents where user matches authorId
+			const savedPostsToDelete = await sanityClient.fetch(
+				`*[_type == "savedPost" && user == $authorId]{_id}`,
+				{ authorId }
 			);
+			savedPostsToDelete.forEach((savedPost: { _id: string }) => {
+				transaction = transaction.delete(savedPost._id);
+			});
+
+			// Delete posts authored by the user
+			const postsToDelete = await sanityClient.fetch(
+				`*[_type == "post" && author._ref == $authorId]{_id}`,
+				{ authorId }
+			);
+			postsToDelete.forEach((post: { _id: string }) => {
+				transaction = transaction.delete(post._id);
+			});
+
+			// Delete the author document
+			transaction = transaction.delete(authorId);
+
+			// Commit the transaction
+			await transaction.commit();
 		}
 
 		// Delete user profile from Supabase
@@ -38,66 +67,6 @@ export async function DELETE(request: NextRequest) {
 		if (supabaseError) {
 			throw new Error(supabaseError.message);
 		}
-
-		// Fetch the author document from Sanity
-		const authorQuery = `*[_type == "author" && name == $username][0]`;
-		const author = await sanityClient.fetch(authorQuery, { username });
-
-		if (author) {
-			// Fetch all posts by the author
-			const postsToDelete = await sanityClient.fetch(
-				`*[_type == "post" && author._ref == $authorId]{_id}`,
-				{ authorId: author._id }
-			);
-
-			console.log("Posts to delete:", postsToDelete);
-
-			// Collect all post IDs to be deleted
-			const postIds = postsToDelete.map((post: { _id: string }) => post._id);
-
-			// Fetch savedPost documents that reference these posts
-			const savedPostsToUpdate = await sanityClient.fetch(
-				`*[_type == "savedPost" && posts[].post._ref in $postIds]{_id, posts}`,
-				{ postIds }
-			);
-
-			console.log("SavedPosts to update:", savedPostsToUpdate);
-
-			// Build a transaction to update savedPost documents, delete posts and author
-			let transaction = sanityClient.transaction();
-
-			// Update savedPost documents to remove references to the posts being deleted
-			savedPostsToUpdate.forEach((savedPost: { _id: string; posts: any[] }) => {
-				// Filter out the posts that are being deleted
-				const updatedPosts = savedPost.posts.filter(
-					(postObj: any) => !postIds.includes(postObj.post._ref)
-				);
-
-				if (updatedPosts.length === 0) {
-					// If no posts are left, delete the savedPost document
-					transaction = transaction.delete(savedPost._id);
-				} else {
-					// Otherwise, update the posts field
-					transaction = transaction.patch(savedPost._id, {
-						set: { posts: updatedPosts },
-					});
-				}
-			});
-
-			// Add post deletions to the transaction
-			postsToDelete.forEach((post: { _id: string }) => {
-				transaction = transaction.delete(post._id);
-			});
-
-			// Delete the author document
-			transaction = transaction.delete(author._id);
-
-			// Commit the transaction
-			await transaction.commit();
-		}
-
-		// Delete Clerk user
-		await clerkClient.users.deleteUser(userId);
 
 		return NextResponse.json(
 			{ message: "Account deleted successfully" },
