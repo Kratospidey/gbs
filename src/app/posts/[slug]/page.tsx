@@ -15,6 +15,8 @@ import { FaLinkedin, FaGithub, FaGlobe } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
 import { Tag } from "@/components/Tag";
+import { useUser } from "@clerk/nextjs";
+import { nanoid } from "nanoid";
 
 interface Post {
 	_id: string;
@@ -60,13 +62,15 @@ const getSupabaseImageUrl = (path: string | undefined) => {
 };
 
 const PostDetailPage = () => {
+	const { user } = useUser();
 	const { slug } = useParams();
 	const router = useRouter();
 	const [post, setPost] = useState<PostDetail | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
+	const [isSaved, setIsSaved] = useState(false);
 
 	useEffect(() => {
-		const fetchPost = async () => {
+		const fetchPostAndSaveStatus = async () => {
 			try {
 				const data = await client.fetch(
 					`
@@ -81,7 +85,7 @@ const PostDetailPage = () => {
             "author": {
               "name": author->name,
               "clerk_id": author->_id, // Use _id since we're storing clerk_id there
-              "profile_picture": author->profile_picture,  // Add this line
+              "profile_picture": author->profile_picture,
             },
             tags,
             "estimatedReadingTime": round(length(body) / 5 / 180 )
@@ -90,31 +94,35 @@ const PostDetailPage = () => {
 					{ slug }
 				);
 
-				console.log("Sanity author data:", data?.author); // Add this log
-
 				// Fetch author profile from Supabase
 				if (data?.author?.clerk_id) {
-					console.log("Querying Supabase with clerk_id:", data.author.clerk_id);
-
 					const { data: profileData, error } = await supabase
 						.from("user_profiles")
 						.select("profile_picture, user_id")
 						.eq("user_id", data.author.clerk_id)
 						.single();
 
-					console.log("Supabase query result:", { profileData, error });
-
 					if (profileData?.profile_picture) {
 						data.author = {
 							...data.author,
 							profile_picture: profileData.profile_picture,
 						};
-						console.log("Updated author data:", data.author);
 					}
 				}
 
-				console.log("Author data:", data.author);
 				setPost(data);
+
+				// Only check saved status if both user and post exist
+				if (user && data?._id) {
+					const savedPostDoc = await client.fetch(
+						`*[_type == "savedPost" && user == $userId && $postId in posts[].post._ref][0]`,
+						{
+							userId: user.id,
+							postId: data._id,
+						}
+					);
+					setIsSaved(!!savedPostDoc);
+				}
 			} catch (error) {
 				console.error("Error fetching post:", error);
 			}
@@ -122,15 +130,92 @@ const PostDetailPage = () => {
 		};
 
 		if (slug) {
-			fetchPost();
+			fetchPostAndSaveStatus();
 		}
-	}, [slug]);
+	}, [slug, user?.id, isSaved]);
 
 	const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
-	const addToList = () => {
-		// Implement add to list functionality
-		toast.success("Added to your list!");
+
+	const addToList = async () => {
+		if (!user) {
+			toast.error("Please sign in to save posts");
+			return;
+		}
+
+		if (!post) {
+			toast.error("Post not found");
+			return;
+		}
+
+		try {
+			// Fetch the savedPost document for the user
+			const savedPostDoc = await client.fetch(
+				`*[_type == "savedPost" && user == $userId][0]`,
+				{
+					userId: user.id,
+				}
+			);
+
+			if (savedPostDoc) {
+				// Check if the post is already saved
+				const postIndex = savedPostDoc.posts.findIndex(
+					(p: any) => p.post._ref === post._id
+				);
+
+				if (postIndex > -1) {
+					// Remove the post from the posts array
+					await client
+						.patch(savedPostDoc._id)
+						.unset([`posts[${postIndex}]`])
+						.commit();
+
+					setIsSaved(false);
+					toast.success("Removed from your saved posts!");
+				} else {
+					// Add the post to the posts array with a unique _key
+					await client
+						.patch(savedPostDoc._id)
+						.append("posts", [
+							{
+								_key: nanoid(),
+								post: {
+									_type: "reference",
+									_ref: post._id,
+								},
+								savedAt: new Date().toISOString(),
+							},
+						])
+						.commit();
+
+					setIsSaved(true);
+					toast.success("Added to your saved posts!");
+				}
+			} else {
+				// Create a new savedPost document for the user
+				await client.create({
+					_type: "savedPost",
+					user: user.id,
+					posts: [
+						{
+							_key: nanoid(),
+							post: {
+								_type: "reference",
+								_ref: post._id,
+							},
+							savedAt: new Date().toISOString(),
+						},
+					],
+				});
+
+				setIsSaved(true);
+				toast.success("Added to your saved posts!");
+			}
+		} catch (error) {
+			console.error("Error saving post:", error);
+			toast.error("Failed to save post");
+		}
 	};
+
 	const sharePost = () => {
 		navigator.clipboard.writeText(window.location.href);
 		toast.success("Link copied to clipboard!");
@@ -148,8 +233,6 @@ const PostDetailPage = () => {
 				Post not found
 			</div>
 		);
-
-	// console.log(post.body);
 
 	return (
 		<div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -179,18 +262,21 @@ const PostDetailPage = () => {
 							<Avatar className="h-12 w-12 cursor-pointer hover:opacity-80 transition-opacity">
 								<AvatarImage
 									src={(() => {
-										if (!post.author?.profile_picture) return "/default-avatar.png";
-										
+										if (!post.author?.profile_picture)
+											return "/default-avatar.png";
+
 										// If it's already a full URL (from Supabase), use it directly
-										if (post.author.profile_picture.startsWith('http')) {
+										if (post.author.profile_picture.startsWith("http")) {
 											return post.author.profile_picture;
 										}
-									
+
 										// If it's a relative path, construct Supabase URL
 										const { data } = supabase.storage
 											.from("user_pfp")
-											.getPublicUrl(`public/${post.author.clerk_id}/${post.author.profile_picture}`);
-									
+											.getPublicUrl(
+												`public/${post.author.clerk_id}/${post.author.profile_picture}`
+											);
+
 										return data?.publicUrl || "/default-avatar.png";
 									})()}
 									alt={post.author?.name || "Author"}
@@ -265,9 +351,13 @@ const PostDetailPage = () => {
 						onClick={addToList}
 						variant="secondary"
 						size="icon"
-						className="p-2 rounded-full shadow-lg backdrop-blur-sm hover:scale-110 transition-transform"
+						className={`p-2 rounded-full shadow-lg backdrop-blur-sm hover:scale-110 transition-transform ${
+							isSaved ? "bg-primary text-primary-foreground" : ""
+						}`}
 					>
-						<FaBookmark className="h-5 w-5" />
+						<FaBookmark
+							className={`h-5 w-5 ${isSaved ? "fill-current" : ""}`}
+						/>
 					</Button>
 					<Button
 						onClick={sharePost}
