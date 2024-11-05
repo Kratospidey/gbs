@@ -21,7 +21,7 @@ interface Post {
 	mainImageUrl?: string;
 	status: "pending" | "published" | "draft" | "archived";
 	tags?: string[];
-	author?: Author; // Made optional
+	author?: Author;
 }
 
 const HomePage: React.FC = () => {
@@ -31,7 +31,7 @@ const HomePage: React.FC = () => {
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [error, setError] = useState<string | null>(null);
 
-	const debouncedTagFilter = useDebounce(tagFilter, 500); // 500ms debounce
+	const debouncedTagFilter = useDebounce(tagFilter, 500);
 
 	useEffect(() => {
 		const fetchPosts = async () => {
@@ -39,7 +39,6 @@ const HomePage: React.FC = () => {
 			setError(null);
 
 			try {
-				// Construct query parameters
 				const params = new URLSearchParams();
 				params.append("status", "published");
 				params.append("sortOrder", sortOrder);
@@ -77,7 +76,6 @@ const HomePage: React.FC = () => {
 
 	const handleTagSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		// The useEffect will handle fetching based on updated tagFilter
 	};
 
 	return (
@@ -149,32 +147,37 @@ const HomePage: React.FC = () => {
 				{!isLoading && !error && (
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 						{posts.map((post) => (
-							<div
+							<Link
+								href={`/posts/${post.slug}`}
 								key={post._id}
-								className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden transition-transform transform hover:scale-105"
+								className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden transition-transform transform hover:scale-105 cursor-pointer"
 							>
 								{post.mainImageUrl && (
 									<Image
 										src={post.mainImageUrl}
 										alt={post.title}
-										width={800} // Adjust based on your design requirements
-										height={600} // Adjust based on your design requirements
+										width={800}
+										height={600}
 										className="w-full h-48 object-cover"
 									/>
 								)}
 								<div className="p-4">
-									<Link href={`/posts/${post.slug}`}>
-										<h2 className="text-xl font-semibold text-gray-800 dark:text-white hover:text-blue-500">
-											{post.title}
-										</h2>
-									</Link>
+									<h2 className="text-xl font-semibold text-gray-800 dark:text-white hover:text-blue-500">
+										{post.title}
+									</h2>
 									<p className="text-sm text-gray-600 dark:text-gray-300">
 										Published on{" "}
 										{new Date(post.publishedAt).toLocaleDateString()}{" "}
 										{post.author ? (
 											<>
-												by {post.author.firstName} {post.author.lastName} (@
-												{post.author.username})
+												by{" "}
+												<span
+													onClick={(e) => e.stopPropagation()}
+													className="text-blue-500 cursor-pointer"
+												>
+													{post.author.firstName} {post.author.lastName} (@
+													{post.author.username})
+												</span>
 											</>
 										) : (
 											"by Unknown Author"
@@ -183,12 +186,14 @@ const HomePage: React.FC = () => {
 									{post.tags && (
 										<div className="mt-2 flex flex-wrap gap-2">
 											{post.tags.map((tag) => (
-												<Tag key={tag} text={tag} />
+												<span key={tag} onClick={(e) => e.stopPropagation()}>
+													<Tag text={tag} />
+												</span>
 											))}
 										</div>
 									)}
 								</div>
-							</div>
+							</Link>
 						))}
 					</div>
 				)}
