@@ -6,7 +6,6 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Tag } from "@/components/Tag";
-import { useDebounce } from "@/hooks/useDebounce";
 
 interface Author {
 	username: string;
@@ -106,8 +105,11 @@ const TagPage: React.FC = () => {
 										{new Date(post.publishedAt).toLocaleDateString()}{" "}
 										{post.author ? (
 											<>
-												by {post.author.firstName} {post.author.lastName} (@
-												{post.author.username})
+												by {post.author.firstName} {post.author.lastName} (
+												<Link href={`/profile/${post.author.username}`} className="text-blue-500 hover:underline">
+													@{post.author.username}
+												</Link>
+												)
 											</>
 										) : (
 											"by Unknown Author"

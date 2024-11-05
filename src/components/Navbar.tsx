@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { Cog, User, LayoutDashboard, Bookmark } from "lucide-react";
+import { Cog, User, LayoutDashboard, Bookmark, Pencil } from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 import { useUser, useClerk } from "@clerk/nextjs";
 import client from "@/lib/sanityClient";
@@ -176,6 +176,15 @@ const Navbar: React.FC = () => {
 									<LayoutDashboard className="h-6 w-6" />
 								</Link>
 
+								{/* Create Post */}
+								<Link
+									href="/posts/create"
+									className="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
+									title="Create Post"
+								>
+									<Pencil className="h-6 w-6" />
+								</Link>
+
 								{/* Profile Dropdown */}
 								<div className="relative group">
 									<button
@@ -184,14 +193,14 @@ const Navbar: React.FC = () => {
 									>
 										<User className="h-6 w-6" />
 									</button>
-										<div 
-											className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg 
+									<div
+										className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg 
 											invisible group-hover:visible opacity-0 group-hover:opacity-100 
 											transition-all duration-300 ease-in-out transform 
 											-translate-y-1 group-hover:translate-y-0
 											group-hover:delay-100
 											before:content-[''] before:absolute before:top-[-10px] before:left-0 before:w-full before:h-[10px]"
-										>
+									>
 										{username && (
 											<Link
 												href={`/profile/${username}`}
@@ -222,14 +231,14 @@ const Navbar: React.FC = () => {
 									>
 										<Cog className="h-6 w-6" />
 									</button>
-										<div 
-											className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-700 rounded-md shadow-lg 
+									<div
+										className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-700 rounded-md shadow-lg 
 											invisible group-hover:visible opacity-0 group-hover:opacity-100 
 											transition-all duration-300 ease-in-out transform 
 											-translate-y-1 group-hover:translate-y-0
 											group-hover:delay-100
 											before:content-[''] before:absolute before:top-[-10px] before:left-0 before:w-full before:h-[10px]"
-										>
+									>
 										<button
 											onClick={() => clerk.signOut()}
 											className="w-full text-left px-4 py-2 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"

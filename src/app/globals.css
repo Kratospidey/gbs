@@ -109,3 +109,7 @@ outline: none;
 .prose-container {
   padding: 0px;
 }
+
+.cl-userButton-root {
+  display: none !important;
+}
