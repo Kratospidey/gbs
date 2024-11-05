@@ -20,8 +20,6 @@ interface SearchResult {
 const Navbar: React.FC = () => {
 	const { user, isLoaded, isSignedIn } = useUser();
 	const clerk = useClerk();
-	const [isCogOpen, setIsCogOpen] = useState(false);
-	const [isProfileOpen, setIsProfileOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
 	const [showResults, setShowResults] = useState(false);
@@ -86,9 +84,6 @@ const Navbar: React.FC = () => {
 		document.addEventListener("click", handleClickOutside);
 		return () => document.removeEventListener("click", handleClickOutside);
 	}, []);
-
-	const toggleCog = () => setIsCogOpen(!isCogOpen);
-	const toggleProfile = () => setIsProfileOpen(!isProfileOpen);
 
 	const username =
 		isSignedIn && user ? user.username || user.firstName || "user" : null;
@@ -167,6 +162,7 @@ const Navbar: React.FC = () => {
 								<Link
 									href="/saved"
 									className="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
+									title="Saved Posts"
 								>
 									<Bookmark className="h-6 w-6" />
 								</Link>
@@ -175,65 +171,78 @@ const Navbar: React.FC = () => {
 								<Link
 									href="/dashboard"
 									className="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
+									title="Dashboard"
 								>
 									<LayoutDashboard className="h-6 w-6" />
 								</Link>
 
 								{/* Profile Dropdown */}
-								<div className="relative">
+								<div className="relative group">
 									<button
-										onClick={toggleProfile}
 										className="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
+										title="User Profile"
 									>
 										<User className="h-6 w-6" />
 									</button>
-									{isProfileOpen && (
-										<div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg py-2">
-											{username && (
-												<Link
-													href={`/profile/${username}`}
-													className="block px-4 py-2 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"
-												>
-													View Profile
-												</Link>
-											)}
+										<div 
+											className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg 
+											invisible group-hover:visible opacity-0 group-hover:opacity-100 
+											transition-all duration-300 ease-in-out transform 
+											-translate-y-1 group-hover:translate-y-0
+											group-hover:delay-100
+											before:content-[''] before:absolute before:top-[-10px] before:left-0 before:w-full before:h-[10px]"
+										>
+										{username && (
 											<Link
-												href="/profile"
+												href={`/profile/${username}`}
 												className="block px-4 py-2 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"
 											>
-												Edit Profile
+												View Profile
 											</Link>
-										</div>
-									)}
+										)}
+										<Link
+											href="/profile"
+											className="block px-4 py-2 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"
+										>
+											Edit Profile
+										</Link>
+									</div>
 								</div>
 
 								{/* Theme Switcher */}
-								<ModeToggle />
+								<div className="relative group">
+									<ModeToggle />
+								</div>
 
 								{/* Cog Icon Dropdown */}
-								<div className="relative">
+								<div className="relative group">
 									<button
-										onClick={toggleCog}
 										className="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
+										title="Settings"
 									>
 										<Cog className="h-6 w-6" />
 									</button>
-									{isCogOpen && (
-										<div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-700 rounded-md shadow-lg py-2">
-											<button
-												onClick={() => clerk.signOut()}
-												className="w-full text-left px-4 py-2 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"
-											>
-												Logout
-											</button>
-											<button
-												onClick={handleDeleteAccount}
-												className="w-full text-left px-4 py-2 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"
-											>
-												Delete Account
-											</button>
-										</div>
-									)}
+										<div 
+											className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-700 rounded-md shadow-lg 
+											invisible group-hover:visible opacity-0 group-hover:opacity-100 
+											transition-all duration-300 ease-in-out transform 
+											-translate-y-1 group-hover:translate-y-0
+											group-hover:delay-100
+											before:content-[''] before:absolute before:top-[-10px] before:left-0 before:w-full before:h-[10px]"
+										>
+										<button
+											onClick={() => clerk.signOut()}
+											className="w-full text-left px-4 py-2 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"
+										>
+											Logout
+										</button>
+										<button
+											onClick={handleDeleteAccount}
+											className="w-full text-left px-4 py-2 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600"
+										>
+											Delete Account
+										</button>
+									</div>
 								</div>
 							</>
 						)}
@@ -243,12 +252,14 @@ const Navbar: React.FC = () => {
 								<Link
 									href="/signin"
 									className="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
+									title="Sign In"
 								>
 									Sign In
 								</Link>
 								<Link
 									href="/signup"
 									className="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
+									title="Sign Up"
 								>
 									Sign Up
 								</Link>

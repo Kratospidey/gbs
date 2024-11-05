@@ -171,13 +171,13 @@ const HomePage: React.FC = () => {
 										{post.author ? (
 											<>
 												by{" "}
-												<span
+												<Link
+													href={`/profile/${post.author.username}`}
 													onClick={(e) => e.stopPropagation()}
 													className="text-blue-500 cursor-pointer"
 												>
-													{post.author.firstName} {post.author.lastName} (@
-													{post.author.username})
-												</span>
+													@{post.author.username}
+												</Link>
 											</>
 										) : (
 											"by Unknown Author"
