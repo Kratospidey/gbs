@@ -28,14 +28,14 @@ export default defineType({
 
       to: [{type: 'author'}],
     }),
-    defineField({
+    {
       name: 'mainImage',
-      title: 'Main Image',
       type: 'image',
+      title: 'Main Image',
       options: {
-        hotspot: true,
+        hotspot: true, // Enables image hotspot feature (optional)
       },
-    }),
+    },
     defineField({
       name: 'tags',
       title: 'Tags',
