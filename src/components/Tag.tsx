@@ -1,20 +1,37 @@
 // components/Tag.tsx
-import Link from "next/link";
+"use client";
+
+import { useRouter } from "next/navigation"; // Use next/navigation instead of next/router
+import React from "react";
 
 interface TagProps {
 	text: string;
+	onClick?: () => void;
+	isEditable?: boolean;
 }
 
-export function Tag({ text }: TagProps) {
+export const Tag: React.FC<TagProps> = ({
+	text,
+	onClick,
+	isEditable = false,
+}) => {
+	const router = useRouter();
+
+	const handleClick = () => {
+		if (isEditable && onClick) {
+			onClick();
+		} else {
+			router.push(`/tag/${text}`);
+		}
+	};
+
 	return (
-		<Link href={`/tag/${text}`}>
-			<span
-				className="inline-flex items-center px-3 py-1 mr-2 mb-2 text-sm font-medium rounded-full 
-                   bg-blue-100 dark:bg-blue-700 text-blue-800 dark:text-blue-200 
-                   hover:bg-blue-200 dark:hover:bg-blue-600 cursor-pointer transition-colors"
-			>
-				#{text}
-			</span>
-		</Link>
+		<span
+			className={`bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm mr-2 mb-2 
+        ${isEditable ? "cursor-pointer hover:bg-red-100" : "cursor-pointer hover:bg-blue-200"}`}
+			onClick={handleClick}
+		>
+			{text} {isEditable && "×"}
+		</span>
 	);
-}
+};

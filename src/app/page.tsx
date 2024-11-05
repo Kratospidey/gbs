@@ -186,9 +186,18 @@ const HomePage: React.FC = () => {
 									{post.tags && (
 										<div className="mt-2 flex flex-wrap gap-2">
 											{post.tags.map((tag) => (
-												<span key={tag} onClick={(e) => e.stopPropagation()}>
-													<Tag text={tag} />
-												</span>
+												<div 
+													key={tag} 
+													onClick={(e) => {
+														e.preventDefault(); // Prevent post link navigation
+														e.stopPropagation(); // Stop event bubbling
+													}}
+												>
+													<Tag 
+														text={tag} 
+														isEditable={false} 
+													/>
+												</div>
 											))}
 										</div>
 									)}

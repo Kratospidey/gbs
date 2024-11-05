@@ -5,6 +5,7 @@ import React from "react";
 import Link from "next/link";
 import { Tag } from "@/components/Tag";
 import { urlFor } from "@/lib/imageUrlBuilder";
+import Image from "next/image";
 
 interface Slug {
 	current: string;
@@ -56,8 +57,10 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
 				{/* Image */}
 				<div className="cursor-pointer">
 					{imageUrl && (
-						<img
+						<Image
 							src={imageUrl}
+							width={"250"}
+							height={"250"}
 							alt={post.title}
 							className="w-full h-48 object-cover mb-4 rounded-md shadow-sm transition-transform transform hover:scale-105"
 						/>

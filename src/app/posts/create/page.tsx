@@ -228,6 +228,7 @@ const CreatePost: React.FC = () => {
 									<Tag
 										key={tag}
 										text={tag}
+										isEditable={true}
 										onClick={() => setTags(tags.filter((t) => t !== tag))}
 									/>
 								))}

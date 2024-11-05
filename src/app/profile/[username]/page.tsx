@@ -6,11 +6,12 @@ import { useState, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { FaLinkedin, FaGithub, FaGlobe } from "react-icons/fa";
 import Link from "next/link";
-import { MoonIcon, SunIcon } from "@radix-ui/react-icons";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Tag } from "@/components/Tag";
+import Image from "next/image";
+
 
 // Update UserProfile interface to match Supabase columns
 interface UserProfile {
@@ -162,8 +163,10 @@ const UserProfilePage = () => {
 							{posts.map((post) => (
 								<Link key={post.id} href={`/posts/${post.slug}`}>
 									<div className="border bg-card text-card-foreground rounded-lg shadow-sm hover:shadow-md transition-shadow">
-										<img
-											src={post.image_url}
+										<Image
+											src={post.image_url || '/default-post-image.png'}
+											width={"250"}
+											height={"250"}
 											alt={post.title}
 											className="w-full h-48 object-cover rounded-t-lg"
 										/>

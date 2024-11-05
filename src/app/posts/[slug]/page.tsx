@@ -17,6 +17,7 @@ import Link from "next/link";
 import { Tag } from "@/components/Tag";
 import { useUser } from "@clerk/nextjs";
 import { nanoid } from "nanoid";
+import Image from "next/image";
 
 interface Post {
 	_id: string;
@@ -132,7 +133,7 @@ const PostDetailPage = () => {
 		if (slug) {
 			fetchPostAndSaveStatus();
 		}
-	}, [slug, user?.id, isSaved]);
+	}, [slug, user?.id, isSaved, user]);
 
 	const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
@@ -239,7 +240,7 @@ const PostDetailPage = () => {
 			{/* Hero Section */}
 			<div className="relative h-[50vh] w-full">
 				<div className="absolute inset-0">
-					<img
+					<Image
 						src={post.mainImage?.asset?.url}
 						alt={post.title}
 						className="w-full h-full object-cover"

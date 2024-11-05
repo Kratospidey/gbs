@@ -62,7 +62,7 @@ const TagPage: React.FC = () => {
 		<div className="min-h-screen bg-gray-100 dark:bg-gray-900">
 			<div className="max-w-7xl mx-auto p-6">
 				<h1 className="text-4xl font-bold mb-6 text-gray-800 dark:text-white">
-					Posts Tagged with "{tagname}"
+					Posts Tagged with &quot;{tagname}&quot;
 				</h1>
 
 				{/* Loading State */}
@@ -105,11 +105,11 @@ const TagPage: React.FC = () => {
 										{new Date(post.publishedAt).toLocaleDateString()}{" "}
 										{post.author ? (
 											<>
-												by {post.author.firstName} {post.author.lastName} (
+												by  <></>
 												<Link href={`/profile/${post.author.username}`} className="text-blue-500 hover:underline">
 													@{post.author.username}
 												</Link>
-												)
+												
 											</>
 										) : (
 											"by Unknown Author"
@@ -118,7 +118,18 @@ const TagPage: React.FC = () => {
 									{post.tags && (
 										<div className="mt-2 flex flex-wrap gap-2">
 											{post.tags.map((tag) => (
-												<Tag key={tag} text={tag} />
+												<div 
+													key={tag} 
+													onClick={(e) => {
+														e.preventDefault();
+														e.stopPropagation();
+													}}
+												>
+													<Tag 
+														text={tag} 
+														isEditable={false}
+													/>
+												</div>
 											))}
 										</div>
 									)}

@@ -20,6 +20,8 @@ import { v4 as uuidv4 } from 'uuid';
 import DarkModeToggle from '@/components/DarkModeToggle';
 import MarkdownEditor from '@/components/MarkdownEditor';
 import { Tag } from '@/components/Tag';
+import Image from "next/image";
+
 
 interface Post {
   _id: string;
@@ -253,7 +255,7 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
                 Main Image
               </Label>
               {existingMainImageUrl && (
-                <img
+                <Image
                   src={existingMainImageUrl}
                   alt="Existing Main Image"
                   className="mb-2 w-full h-auto"
@@ -277,6 +279,7 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
                   <Tag 
                     key={tag} 
                     text={tag}
+                    isEditable={true}
                     onClick={() => setTags(tags.filter(t => t !== tag))}
                   />
                 ))}

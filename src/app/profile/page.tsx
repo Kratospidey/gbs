@@ -14,6 +14,7 @@ import { toast } from "react-toastify";
 import { syncUserProfile } from "@/lib/syncUserProfile";
 import { z } from "zod"; // For validation
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 import {
 	Card,
@@ -69,7 +70,7 @@ const ProfilePage: React.FC = () => {
 	// Auth check effect
 	useEffect(() => {
 		if (isLoaded && !user) {
-			router.push('/signin');
+			router.push("/signin");
 		}
 	}, [isLoaded, user, router]);
 
@@ -87,22 +88,22 @@ const ProfilePage: React.FC = () => {
 					// Initialize profile if it doesn't exist
 					await syncUserProfile({
 						user_id: user.id,
-						first_name: user.firstName || '',
-						last_name: user.lastName || '',
-						bio: '',
-						profile_picture: '/default-avatar.png',
-						github: '',
-						linkedin: '',
-						custom_link: ''
+						first_name: user.firstName || "",
+						last_name: user.lastName || "",
+						bio: "",
+						profile_picture: "/default-avatar.png",
+						github: "",
+						linkedin: "",
+						custom_link: "",
 					});
-					
+
 					// Fetch again after initialization
 					const { data: newData } = await supabase
 						.from("user_profiles")
 						.select("*")
 						.eq("user_id", user.id)
 						.single();
-						
+
 					if (newData) data = newData;
 				}
 
@@ -129,7 +130,9 @@ const ProfilePage: React.FC = () => {
 	if (!isLoaded || !user) {
 		return (
 			<div className="min-h-screen flex items-center justify-center dark:bg-gray-900">
-				<div className="text-lg text-gray-600 dark:text-gray-300">Loading...</div>
+				<div className="text-lg text-gray-600 dark:text-gray-300">
+					Loading...
+				</div>
 			</div>
 		);
 	}
@@ -232,11 +235,13 @@ const ProfilePage: React.FC = () => {
 				</CardHeader>
 				<CardContent>
 					<div className="flex flex-col items-center gap-3">
-						<img
+						<Image
 							src={
 								profile.profilePicture ||
 								"https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"
 							}
+							width={"250"}
+							height={"250"}
 							alt="Profile Picture"
 							className="w-24 h-24 rounded-full mb-4"
 						/>

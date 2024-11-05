@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Tag } from "@/components/Tag";
+import Image from "next/image";
 
 // Define nested interfaces
 interface Slug {
@@ -194,11 +195,14 @@ const DashboardPage: React.FC = () => {
                 ${post.status === 'pending' ? 'opacity-70' : ''}`}
               >
                 {post.mainImage?.asset?.url && (
-                  <img
+                  <Image
                     src={post.mainImage.asset.url}
                     alt={post.title}
+                    width={"250"}
+                    height={"250"}
                     className={`w-full h-48 object-cover mb-4 rounded-md shadow-sm 
                     ${post.status !== 'pending' ? 'transition-transform transform hover:scale-105' : ''}`}
+                   
                   />
                 )}
                 <div className="text-center">
