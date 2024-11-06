@@ -36,25 +36,25 @@ interface Post {
 	tags?: string[];
 }
 
-// Define a specific type for filter
-type StatusFilter = "published" | "pending" | "draft" | "archived";
-
-// Type Guard for "archived"
-const isArchived = (status: StatusFilter): status is "archived" =>
-	status === "archived";
+const isArchived = (status: string): boolean => status === "archived";
 
 const DashboardPage: React.FC = () => {
 	const [posts, setPosts] = useState<Post[]>([]);
-	const [filter, setFilter] = useState<StatusFilter>("published");
+	const [filter, setFilter] = useState<
+		"published" | "drafts" | "archived" | "pending"
+	>("published");
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const router = useRouter();
 	const { user, isLoaded } = useUser();
 
 	// Define filter options with correct mapping
-	const filterOptions: { label: string; value: StatusFilter }[] = [
+	const filterOptions: {
+		label: string;
+		value: "published" | "pending" | "drafts" | "archived";
+	}[] = [
 		{ label: "Published", value: "published" },
 		{ label: "Pending", value: "pending" },
-		{ label: "Drafts", value: "draft" },
+		{ label: "Drafts", value: "drafts" },
 		{ label: "Archived", value: "archived" },
 	];
 
@@ -73,7 +73,7 @@ const DashboardPage: React.FC = () => {
 				let query = `*[_type == 'post' && author._ref == $userId`;
 
 				switch (filter) {
-					case "draft":
+					case "drafts":
 						query += ` && status == 'draft'`;
 						break;
 					case "archived":
@@ -184,24 +184,12 @@ const DashboardPage: React.FC = () => {
 		setIsLoading(true);
 		try {
 			await client.patch(postId).set({ status: "published" }).commit();
-
 			// Re-fetch the updated post
 			const updatedPost: Post = await client.fetch(
 				`*[_type == 'post' && _id == $postId][0]`,
 				{ postId }
 			);
-
-			// Remove the unarchived post from the current list
-			setPosts(posts.filter((post) => post._id !== postId));
-
-			// If the current filter is "published", add the updated post to the list
-			if (filter === "published") {
-				setPosts((prevPosts) => [updatedPost, ...prevPosts]);
-			}
-
-			// Set the filter to "published" to display the unarchived post immediately
-			setFilter("published");
-
+			setPosts([updatedPost, ...posts]);
 			toast.success("Post unarchived successfully!");
 		} catch (error) {
 			console.error("Error unarchiving post: ", error);
@@ -214,16 +202,21 @@ const DashboardPage: React.FC = () => {
 		<div className="max-w-5xl mx-auto p-6 dark:bg-gray-900 dark:text-white">
 			<ToastContainer />
 			<DarkModeToggle />
-			<h1 className="text-4xl font-bold mb-6 text-foreground">My Posts</h1>
+			<h1 className="text-4xl font-bold mb-6 text-center text-foreground">
+				My Posts
+			</h1>
 
 			{/* Filter Buttons */}
-			<div className="flex justify-center gap-6 mb-8">
+			<div className="flex justify-center gap-4 mb-8">
 				{filterOptions.map(({ label, value }) => (
 					<Button
 						key={label}
 						onClick={() => setFilter(value)}
-						className={`tab ${
-							filter === value ? "tab-selected" : "tab-default"
+						variant={filter === value ? "default" : "outline"}
+						className={`px-4 py-2 rounded-md transition-colors ${
+							filter === value
+								? "bg-indigo-600 text-white"
+								: "border border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
 						}`}
 					>
 						{label}
@@ -239,7 +232,10 @@ const DashboardPage: React.FC = () => {
 					posts.map((post: Post) => {
 						const isClickable = post.status === "published";
 						return (
-							<div key={post._id} className="group relative neomorph-card p-6">
+							<div
+								key={post._id}
+								className="bg-gray-800 rounded-lg shadow-md overflow-hidden"
+							>
 								{/* Clickable area for blog post */}
 								<div
 									onClick={() =>
@@ -247,46 +243,45 @@ const DashboardPage: React.FC = () => {
 											? router.push(`/posts/${post.slug.current}`)
 											: null
 									}
-									className={`cursor-${
-										isClickable ? "pointer" : "not-allowed"
-									} ${!isClickable ? "opacity-70" : ""}`}
+									className={`cursor-${isClickable ? "pointer" : "not-allowed"} ${
+										!isClickable ? "opacity-70" : ""
+									}`}
 								>
 									{post.mainImage?.asset?.url && (
 										<Image
 											src={post.mainImage.asset.url}
 											alt={post.title}
-											width={250}
-											height={250}
-											className={`w-full h-48 object-cover mb-4 rounded-md shadow-sm ${
+											width={400}
+											height={200}
+											className={`w-full h-48 object-cover ${
 												isClickable
 													? "transition-transform transform hover:scale-105"
 													: ""
 											}`}
 										/>
 									)}
-									<div className="text-center">
-										<h2 className="text-xl font-bold text-card-foreground mb-2">
+									<div className="p-4">
+										<h2 className="text-xl font-semibold text-white mb-2">
 											{post.title}
 											{post.status === "pending" && (
-												<span className="ml-2 text-sm text-amber-500">
+												<span className="ml-2 text-sm text-yellow-400">
 													(Pending Review)
 												</span>
 											)}
 											{post.status === "draft" && (
-												<span className="ml-2 text-sm text-gray-500">
+												<span className="ml-2 text-sm text-gray-400">
 													(Draft)
 												</span>
 											)}
 										</h2>
-										<p className="text-sm text-muted-foreground mb-4">
+										<p className="text-sm text-gray-400">
 											{new Date(post.publishedAt).toLocaleDateString()}
 										</p>
 									</div>
 								</div>
 
-								{/* Button container with separate conditionals */}
-								<div className="flex justify-center gap-4 mt-2">
-									{/* Edit Button */}
+								{/* Button container */}
+								<div className="flex justify-around items-center p-4 border-t border-gray-700">
 									{!isArchived(post.status) && post.slug?.current && (
 										<Button
 											onClick={(e) => {
@@ -294,21 +289,19 @@ const DashboardPage: React.FC = () => {
 												handleEdit(post.slug);
 											}}
 											disabled={post.status === "pending"}
-											className="button-base bg-accent text-accent-foreground py-2 px-6 disabled:opacity-50 disabled:cursor-not-allowed"
+											className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
 										>
 											Edit
 										</Button>
 									)}
-
-									{/* Unarchive and Delete Buttons for Archived Posts */}
-									{isArchived(post.status) && (
+									{isArchived(post.status) ? (
 										<>
 											<Button
 												onClick={(e) => {
 													e.stopPropagation();
 													handleUnarchive(post._id);
 												}}
-												className="bg-black text-white hover:bg-gray-700 py-2 px-6 rounded-md transition-colors"
+												className="bg-black text-white hover:bg-gray-700 px-4 py-2 rounded-md"
 											>
 												Unarchive
 											</Button>
@@ -317,51 +310,48 @@ const DashboardPage: React.FC = () => {
 													e.stopPropagation();
 													handleDelete(post._id, post.mainImage?.asset?.url);
 												}}
-												className="bg-black text-white hover:bg-gray-700 py-2 px-6 rounded-md transition-colors"
+												className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md"
+											>
+												Delete
+											</Button>
+										</>
+									) : (
+										<>
+											<Button
+												onClick={(e) => {
+													e.stopPropagation();
+													handleArchive(post._id);
+												}}
+												disabled={post.status === "pending"}
+												className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+											>
+												Archive
+											</Button>
+											<Button
+												onClick={(e) => {
+													e.stopPropagation();
+													handleDelete(post._id, post.mainImage?.asset?.url);
+												}}
+												disabled={post.status === "pending"}
+												className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
 											>
 												Delete
 											</Button>
 										</>
 									)}
-
-									{/* Archive Button for Non-Archived Posts */}
-									{!isArchived(post.status) && (
-										<Button
-											onClick={(e) => {
-												e.stopPropagation();
-												handleArchive(post._id);
-											}}
-											disabled={post.status === "pending"}
-											className="bg-amber-500 hover:bg-amber-600 text-white dark:bg-amber-600 dark:hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed"
-										>
-											Archive
-										</Button>
-									)}
-
-									{/* Delete Button for Non-Archived Posts */}
-									{!isArchived(post.status) && (
-										<Button
-											onClick={(e) => {
-												e.stopPropagation();
-												handleDelete(post._id, post.mainImage?.asset?.url);
-											}}
-											disabled={post.status === "pending"}
-											className="bg-red-600 hover:bg-red-700 text-white dark:bg-red-700 dark:hover:bg-red-800 py-2 px-6 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-										>
-											Delete
-										</Button>
-									)}
 								</div>
 
 								{/* Tags */}
-								<div className="flex flex-wrap mt-2">
-									{post.tags?.map((tag) => <Tag key={tag} text={tag} />)}
+								<div className="p-4 pt-0">
+									<div className="flex flex-wrap gap-2">
+										{post.tags?.map((tag) => <Tag key={tag} text={tag} />)}
+									</div>
 								</div>
 							</div>
 						);
 					})
 				) : (
-					<p className="text-muted-foreground">
+					<p className="text-center text-gray-400">
 						No posts found. Create your first post!
 					</p>
 				)}
