@@ -21,6 +21,14 @@ export default function RootLayoutClient({ children }: RootLayoutClientProps) {
 
 	useEffect(() => {
 		setIsMounted(true);
+
+		// Hide any button with the exact text "Sign in"
+		const buttons = document.querySelectorAll("button");
+		buttons.forEach((button) => {
+			if (button.textContent?.trim() === "Sign in") {
+				button.style.display = "none";
+			}
+		});
 	}, []);
 
 	if (!isMounted) {
@@ -28,7 +36,9 @@ export default function RootLayoutClient({ children }: RootLayoutClientProps) {
 	}
 
 	return (
-		<ClerkProvider>
+		<ClerkProvider
+			publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
+		>
 			<ThemeProvider
 				attribute="class"
 				defaultTheme="dark"
@@ -36,6 +46,7 @@ export default function RootLayoutClient({ children }: RootLayoutClientProps) {
 				disableTransitionOnChange
 			>
 				<SignedOut>
+					{/* Render the SignInButton component */}
 					<SignInButton />
 				</SignedOut>
 				<SignedIn>

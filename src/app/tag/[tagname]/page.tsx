@@ -89,8 +89,8 @@ const TagPage: React.FC = () => {
 									<Image
 										src={post.mainImageUrl}
 										alt={post.title}
-										width={800}
-										height={600}
+										width={250}
+										height={250}
 										className="w-full h-48 object-cover"
 									/>
 								)}
@@ -105,11 +105,13 @@ const TagPage: React.FC = () => {
 										{new Date(post.publishedAt).toLocaleDateString()}{" "}
 										{post.author ? (
 											<>
-												by  <></>
-												<Link href={`/profile/${post.author.username}`} className="text-blue-500 hover:underline">
+												by <></>
+												<Link
+													href={`/profile/${post.author.username}`}
+													className="text-blue-500 hover:underline"
+												>
 													@{post.author.username}
 												</Link>
-												
 											</>
 										) : (
 											"by Unknown Author"
@@ -118,17 +120,14 @@ const TagPage: React.FC = () => {
 									{post.tags && (
 										<div className="mt-2 flex flex-wrap gap-2">
 											{post.tags.map((tag) => (
-												<div 
-													key={tag} 
+												<div
+													key={tag}
 													onClick={(e) => {
 														e.preventDefault();
 														e.stopPropagation();
 													}}
 												>
-													<Tag 
-														text={tag} 
-														isEditable={false}
-													/>
+													<Tag text={tag} isEditable={false} />
 												</div>
 											))}
 										</div>

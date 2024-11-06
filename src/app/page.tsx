@@ -156,8 +156,8 @@ const HomePage: React.FC = () => {
 									<Image
 										src={post.mainImageUrl}
 										alt={post.title}
-										width={800}
-										height={600}
+										width={250}
+										height={250}
 										className="w-full h-48 object-cover"
 									/>
 								)}

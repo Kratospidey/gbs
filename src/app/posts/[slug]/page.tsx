@@ -22,6 +22,7 @@ import Image from "next/image";
 interface Post {
 	_id: string;
 	title: string;
+	status: string; // Added status field
 	publishedAt: string;
 	mainImage: {
 		asset: {
@@ -78,6 +79,7 @@ const PostDetailPage = () => {
           *[_type == "post" && slug.current == $slug][0]{
             _id,
             title,
+            status, // Added status
             body,
             publishedAt,
             mainImage{
@@ -234,6 +236,12 @@ const PostDetailPage = () => {
 				Post not found
 			</div>
 		);
+	if (post.status !== "published")
+		return (
+			<div className="min-h-screen flex items-center justify-center">
+				Post not published
+			</div>
+		);
 
 	return (
 		<div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -243,6 +251,8 @@ const PostDetailPage = () => {
 					<Image
 						src={post.mainImage?.asset?.url}
 						alt={post.title}
+						width={250}
+						height={250}
 						className="w-full h-full object-cover"
 					/>
 					<div className="absolute inset-0 bg-black/50" />

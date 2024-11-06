@@ -240,8 +240,8 @@ const ProfilePage: React.FC = () => {
 								profile.profilePicture ||
 								"https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"
 							}
-							width={"250"}
-							height={"250"}
+							width={250}
+							height={250}
 							alt="Profile Picture"
 							className="w-24 h-24 rounded-full mb-4"
 						/>

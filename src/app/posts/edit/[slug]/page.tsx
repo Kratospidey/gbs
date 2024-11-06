@@ -22,7 +22,6 @@ import MarkdownEditor from '@/components/MarkdownEditor';
 import { Tag } from '@/components/Tag';
 import Image from "next/image";
 
-
 interface Post {
   _id: string;
   title: string;
@@ -31,14 +30,14 @@ interface Post {
     | {
         _type: 'image';
         asset: {
-          _ref: string; // For references when updating
+          _ref: string;
           _type: 'reference';
         };
       }
     | {
         asset: {
           _id: string;
-          url: string; // For fetched images with URLs
+          url: string;
         };
       }
     | null;
@@ -49,8 +48,8 @@ interface Post {
   publishedAt: string;
   categories: any[];
   _updatedAt: string;
-  status: string; // Add status field
-  tags: string[]; // Add tags field
+  status: string;
+  tags: string[];
 }
 
 interface EditPostProps {
@@ -63,7 +62,7 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
   const { user, isLoaded } = useUser();
   const router = useRouter();
 
-  // 1. Group all state declarations
+  // State declarations
   const [title, setTitle] = useState<string>('');
   const [content, setContent] = useState<string>('');
   const [mainImage, setMainImage] = useState<File | null>(null);
@@ -73,7 +72,7 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
 
-  // 2. Group all effects together
+  // Auth check effect
   useEffect(() => {
     if (isLoaded && !user) {
       router.push(`/signin`);
@@ -123,61 +122,52 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
     fetchPost();
   }, [params.slug, router]);
 
-  // 3. Place loading state check after all hooks
-  if (!isLoaded || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center dark:bg-gray-900">
-        <div className="text-lg text-gray-600 dark:text-gray-300">Loading...</div>
-      </div>
-    );
-  }
-
-  // 4. Helper functions
+  // Handle tag input
   const handleTagInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' || e.key === ',') {
+    if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
       const tag = tagInput.trim().toLowerCase();
       if (tag && !tags.includes(tag)) {
         setTags([...tags, tag]);
       }
-      setTagInput('');
+      setTagInput("");
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (status: string) => {
     if (!user) {
-      alert('You need to be logged in to edit a post.');
+      alert("You need to be logged in to edit a post.");
       return;
     }
 
     setIsLoading(true);
-    let mainImageRef: string = '';
+    let mainImageRef: string = "";
 
     // Handle main image upload if a new image is selected
     if (mainImage) {
       try {
         const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('post_banners')
+          .from("post_banners")
           .upload(`public/${uuidv4()}_${mainImage.name}`, mainImage, {
-            cacheControl: '3600',
+            cacheControl: "3600",
             upsert: false,
           });
 
         if (uploadError) {
-          console.error('Error uploading image to Supabase:', uploadError);
-          alert('Failed to upload main image. Please try again.');
+          console.error("Error uploading image to Supabase:", uploadError);
+          alert("Failed to upload main image. Please try again.");
           setIsLoading(false);
           return;
         }
 
         if (uploadData) {
           // Upload the image to Sanity and get its reference
-          const imageUploadResponse = await client.assets.upload('image', mainImage);
+          const imageUploadResponse = await client.assets.upload("image", mainImage);
           mainImageRef = imageUploadResponse._id;
         }
       } catch (error) {
-        console.error('Error uploading image to Sanity:', error);
-        alert('Failed to upload main image. Please try again.');
+        console.error("Error uploading image to Sanity:", error);
+        alert("Failed to upload main image. Please try again.");
         setIsLoading(false);
         return;
       }
@@ -187,16 +177,16 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
     const updatedPost: Partial<Post> = {
       title: title,
       body: content, // 'content' contains markdown
-      status: 'pending', // Always set to pending on create/update
+      status, // Use the passed status
       tags: tags, // Add this line
       // Only update mainImage if a new one is selected
       ...(mainImage
         ? {
             mainImage: {
-              _type: 'image',
+              _type: "image",
               asset: {
                 _ref: mainImageRef,
-                _type: 'reference',
+                _type: "reference",
               },
             },
           }
@@ -205,11 +195,11 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 
     try {
       await client.patch(postId).set(updatedPost).commit();
-      alert('Post updated successfully!');
+      alert("Post updated successfully!");
       router.push(`/posts/${params.slug}`);
     } catch (error) {
-      console.error('Failed to update post in Sanity:', error);
-      alert('Failed to update post. Please try again.');
+      console.error("Failed to update post in Sanity:", error);
+      alert("Failed to update post. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -227,6 +217,7 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4">
+            {/* Title Field */}
             <div>
               <Label htmlFor="title" className="dark:text-white">
                 Title
@@ -239,6 +230,8 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
                 className="dark:bg-gray-700 dark:text-white"
               />
             </div>
+
+            {/* Content Field */}
             <div>
               <Label htmlFor="content" className="dark:text-white">
                 Content
@@ -250,17 +243,12 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
                 />
               </div>
             </div>
+
+            {/* Main Image Field */}
             <div>
               <Label htmlFor="mainImage" className="dark:text-white">
                 Main Image
               </Label>
-              {existingMainImageUrl && (
-                <Image
-                  src={existingMainImageUrl}
-                  alt="Existing Main Image"
-                  className="mb-2 w-full h-auto"
-                />
-              )}
               <Input
                 type="file"
                 accept="image/*"
@@ -271,19 +259,19 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
                 }}
                 className="dark:bg-gray-700 dark:text-white"
               />
+              {existingMainImageUrl && (
+                <Image
+                  src={existingMainImageUrl}
+                  alt="Existing Main Image"
+                  width={250}
+                  height={250}
+                  className="mt-4 rounded-md"
+                />
+              )}
             </div>
+
+            {/* Tags Field */}
             <div className="mb-4">
-              <label className="block mb-2">Tags</label>
-              <div className="flex flex-wrap mb-2">
-                {tags.map((tag) => (
-                  <Tag 
-                    key={tag} 
-                    text={tag}
-                    isEditable={true}
-                    onClick={() => setTags(tags.filter(t => t !== tag))}
-                  />
-                ))}
-              </div>
               <input
                 type="text"
                 value={tagInput}
@@ -292,16 +280,33 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
                 placeholder="Add tags (press Enter or comma to add)"
                 className="w-full p-2 border rounded"
               />
+              <div className="flex flex-wrap mt-2">
+                {tags.map((tag) => (
+                  <Tag
+                    key={tag}
+                    text={tag}
+                    isEditable={true}
+                    onClick={() => setTags(tags.filter((t) => t !== tag))}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex justify-end space-x-4">
           <Button
-            onClick={handleSubmit}
+            onClick={() => handleSubmit("draft")}
             disabled={isLoading}
-            className="dark:bg-gray-700 dark:text-white"
+            className="bg-gray-500 text-white"
           >
-            {isLoading ? 'Updating...' : 'Update'}
+            {isLoading ? "Saving..." : "Save Draft"}
+          </Button>
+          <Button
+            onClick={() => handleSubmit("published")}
+            disabled={isLoading}
+            className="bg-blue-600 text-white"
+          >
+            {isLoading ? "Updating..." : "Update"}
           </Button>
         </CardFooter>
       </Card>

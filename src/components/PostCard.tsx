@@ -59,8 +59,8 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
 					{imageUrl && (
 						<Image
 							src={imageUrl}
-							width={"250"}
-							height={"250"}
+							width={250}
+							height={250}
 							alt={post.title}
 							className="w-full h-48 object-cover mb-4 rounded-md shadow-sm transition-transform transform hover:scale-105"
 						/>
