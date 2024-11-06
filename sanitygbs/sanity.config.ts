@@ -1,12 +1,19 @@
-import { defineConfig } from 'sanity'
-import { schemaTypes } from './schemas'
+import {defineConfig} from 'sanity'
+import {schemaTypes} from './schemaTypes'
+import { visionTool } from '@sanity/vision'
+import { deskTool } from 'sanity/desk'
 
 export default defineConfig({
   name: 'default',
-  title: 'Your Project Name',
+  title: 'Babel',
 
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
+  projectId: 'xclui0cs', // Replace with your actual project ID
+  dataset: 'production', // Replace
+
+  plugins: [
+    deskTool(),
+    visionTool(),
+  ],
 
   schema: {
     types: schemaTypes,
