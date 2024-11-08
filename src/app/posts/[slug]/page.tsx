@@ -18,6 +18,7 @@ import { Tag } from "@/components/Tag";
 import { useUser } from "@clerk/nextjs";
 import { nanoid } from "nanoid";
 import Image from "next/image";
+import Giscus from "@giscus/react";
 
 interface Post {
 	_id: string;
@@ -345,6 +346,27 @@ const PostDetailPage = () => {
 				</div>
 				<div className="flex flex-wrap mt-4">
 					{post.tags?.map((tag) => <Tag key={tag} text={tag} />)}
+				</div>
+
+				{/* Giscus Comments */}
+				<div className="mt-8">
+					<section id="comments" className="prose dark:prose-invert">
+						<h2>Comments</h2>
+						<Giscus
+							repo={
+								process.env.NEXT_PUBLIC_GISCUS_REPO! as `${string}/${string}`
+							}
+							repoId={process.env.NEXT_PUBLIC_GISCUS_REPO_ID!}
+							category={process.env.NEXT_PUBLIC_GISCUS_CATEGORY!}
+							categoryId={process.env.NEXT_PUBLIC_GISCUS_CATEGORY_ID!}
+							mapping="pathname"
+							reactionsEnabled="1"
+							emitMetadata="0"
+							theme={process.env.NEXT_PUBLIC_GISCUS_THEME!}
+							lang={process.env.NEXT_PUBLIC_GISCUS_LANG!}
+							loading="lazy"
+						/>
+					</section>
 				</div>
 			</div>
 			<>

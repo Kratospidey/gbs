@@ -121,3 +121,16 @@ button:has(> span:only-child) {
 .__className_d65c78 > button {
 	display: none !important;
 }
+
+/* globals.css or a relevant CSS file */
+.giscus {
+	/* Example: Adjust margin or padding */
+	margin-top: 2rem;
+}
+
+.giscus-frame {
+	/* Example: Set max-width or borders */
+	max-width: 100%;
+	border: none;
+}
+
