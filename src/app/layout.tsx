@@ -21,6 +21,7 @@ export default function RootLayout({
 			<body className={inter.className}>
 				<RootLayoutClient>
 					<Navbar />
+					<div id="dropdown-root"></div> {/* Add this div for the dropdown */}
 					<div className="pt-16">
 						{/* Your main content */}
 						{children}
