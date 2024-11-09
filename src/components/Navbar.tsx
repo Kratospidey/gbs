@@ -40,6 +40,16 @@ const Navbar: React.FC = () => {
 	const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
 	const [isCommandOpen, setIsCommandOpen] = useState(false);
 	const [isLoading, setIsLoading] = useState(false);
+	const [isScrolled, setIsScrolled] = useState(false);
+
+	useEffect(() => {
+		const handleScroll = () => {
+			setIsScrolled(window.scrollY > 0);
+		};
+
+		window.addEventListener("scroll", handleScroll);
+		return () => window.removeEventListener("scroll", handleScroll);
+	}, []);
 
 	useEffect(() => {
 		let timeoutId: NodeJS.Timeout;
@@ -144,8 +154,8 @@ const Navbar: React.FC = () => {
 		<>
 			<nav
 				className={`fixed top-0 w-full z-50 transition-colors duration-300 backdrop-blur-custom ${
-					false
-						? "bg-white/70 dark:bg-gray-900/70 border-b border-gray-200 dark:border-gray-700"
+					isScrolled
+						? "bg-white/50 dark:bg-gray-900/50 border-b border-[#708090]"
 						: "bg-white/50 dark:bg-gray-900/50"
 				}`}
 			>
