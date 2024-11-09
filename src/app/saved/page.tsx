@@ -28,17 +28,36 @@ const query = groq`
   }`;
 
 export default async function SavedPostsPage() {
-  const user = await getCurrentUser();
+	const user = await getCurrentUser();
 
-  if (!user) {
-    return <div>Please log in to see your saved posts</div>;
-  }
+	if (!user) {
+		return (
+			<div className="flex items-center justify-center min-h-screen bg-gray-50">
+				<div className="text-center p-6 bg-white rounded shadow-md">
+					<h2 className="text-2xl font-semibold mb-4">Please log in</h2>
+					<p className="text-gray-600">Log in to see your saved posts.</p>
+				</div>
+			</div>
+		);
+	}
 
-  const savedPosts = await client.fetch(query, { userId: user.id });
+	const savedPosts = await client.fetch(query, { userId: user.id });
 
-  if (!savedPosts || !savedPosts.posts.length) {
-    return <div>No saved posts found</div>;
-  }
+	if (!savedPosts || !savedPosts.posts.length) {
+		return (
+			<div className="flex items-center justify-center min-h-screen bg-gray-50">
+				<div className="text-center p-6 bg-white rounded shadow-md">
+					<h2 className="text-2xl font-semibold mb-4">No saved posts found</h2>
+					<p className="text-gray-600">You haven't saved any posts yet.</p>
+				</div>
+			</div>
+		);
+	}
 
-  return <SavedPostsList posts={savedPosts.posts} />;
+	return (
+		<div className="container mx-auto px-4 py-8">
+			<h1 className="text-3xl font-bold mb-6">Your Saved Posts</h1>
+			<SavedPostsList posts={savedPosts.posts} />
+		</div>
+	);
 }
