@@ -289,24 +289,6 @@ const Navbar: React.FC = () => {
 				</div>
 			</nav>
 
-			{/* Debug Section */}
-			<div className="fixed bottom-4 right-4 z-50">
-				<button
-					onClick={async () => {
-						try {
-							console.log("Current search results:", searchResults);
-							const test = await client.fetch('*[_type == "post"][0...1]');
-							console.log("Sanity test:", test);
-						} catch (err) {
-							console.error("Sanity test error:", err);
-						}
-					}}
-					className="bg-blue-500 text-white px-4 py-2 rounded"
-				>
-					Debug Search
-				</button>
-			</div>
-
 			{/* Command Dialog for Search */}
 			<CommandDialog open={isCommandOpen} onOpenChange={setIsCommandOpen}>
 				<span className="sr-only">

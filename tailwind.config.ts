@@ -1,3 +1,4 @@
+// tailwind.config.ts
 import type { Config } from "tailwindcss";
 
 const config: Config = {
@@ -63,12 +64,23 @@ const config: Config = {
         "accordion-up": "accordion-up 0.2s ease-out",
       },
       backdropBlur: {
+        xs: '2px',
+        sm: '4px',
+        DEFAULT: '8px',
+        md: '12px',
+        lg: '16px',
+        xl: '24px',
         '2xl': '40px',
-        'custom': '12px', // Adjust this value to control the blur amount
+        '3xl': '64px', // Added for heavier blur
       },
     },
   },
-  plugins: [require("tailwindcss-animate")  ],
+  variants: {
+    extend: {
+      backdropBlur: ['responsive'],
+    },
+  },
+  plugins: [require("tailwindcss-animate")],
 };
 
 export default config;
