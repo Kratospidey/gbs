@@ -58,6 +58,14 @@ const DashboardPage: React.FC = () => {
 		{ label: "Archived", value: "archived" },
 	];
 
+	// Mapping of filter to no posts message
+	const noPostsMessages: { [key in typeof filter]: string } = {
+		published: "No published posts found.",
+		pending: "No posts are pending review.",
+		drafts: "No drafts found.",
+		archived: "No archived posts found.",
+	};
+
 	// Add auth check effect
 	useEffect(() => {
 		if (isLoaded && !user) {
@@ -352,7 +360,7 @@ const DashboardPage: React.FC = () => {
 					})
 				) : (
 					<p className="text-center text-gray-400">
-						No posts found. Create your first post!
+						{noPostsMessages[filter]}
 					</p>
 				)}
 			</div>
