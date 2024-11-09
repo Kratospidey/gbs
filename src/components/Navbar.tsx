@@ -3,12 +3,26 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
-import { Cog, User, LayoutDashboard, Bookmark, Pencil } from "lucide-react";
+import {
+	Cog,
+	User,
+	LayoutDashboard,
+	Bookmark,
+	Pencil,
+	Search,
+} from "lucide-react";
 import { ModeToggle } from "@/components/mode-toggle";
 import { useUser, useClerk } from "@clerk/nextjs";
 import client from "@/lib/sanityClient";
-import debounce from "lodash/debounce";
-import { createPortal } from "react-dom";
+import {
+	Command,
+	CommandDialog,
+	CommandInput,
+	CommandList,
+	CommandItem,
+} from "@/components/ui/command";
+import { DialogTitle, DialogDescription } from "@radix-ui/react-dialog";
+import { useRouter } from "next/navigation";
 
 interface SearchResult {
 	_id: string;
@@ -19,125 +33,80 @@ interface SearchResult {
 }
 
 const Navbar: React.FC = () => {
+	const router = useRouter();
 	const { user, isLoaded, isSignedIn } = useUser();
 	const clerk = useClerk();
 	const [searchQuery, setSearchQuery] = useState("");
 	const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-	const [showResults, setShowResults] = useState(false);
-	const [scrolled, setScrolled] = useState(false);
+	const [isCommandOpen, setIsCommandOpen] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
 
-	const searchInputRef = useRef<HTMLInputElement>(null);
-	const [dropdownPosition, setDropdownPosition] = useState({
-		top: 0,
-		left: 0,
-		width: 0,
-	});
+	useEffect(() => {
+		let timeoutId: NodeJS.Timeout;
 
-	// Debounced search function
-	const debouncedSearch = useCallback(
-		debounce(async (query: string) => {
-			if (query.length < 2) {
+		const performSearch = async () => {
+			if (searchQuery.length >= 2) {
+				setIsLoading(true);
+				const lowerQuery = searchQuery.toLowerCase().trim();
+				const words = lowerQuery.split(/\s+/);
+
+				console.log("Search query:", searchQuery);
+				console.log("Processed words:", words);
+
+				try {
+					const searchTerms = {
+						exact: lowerQuery,
+						prefix: words.map((word) => `${word}*`).join(" "),
+						contains: words.map((word) => `*${word}*`).join(" "),
+						fuzzy: words
+							.map((word) => `${word.split("").join("*")}*`)
+							.join(" "),
+					};
+
+					console.log("Search terms:", searchTerms);
+
+					const results = await client.fetch<SearchResult[]>(
+						`*[_type == "post" && title != null && (
+              lower(title) == $exact ||
+              title match $prefix ||
+              title match $contains ||
+              title match $fuzzy
+            )]{
+              _id,
+              title,
+              slug
+            }[0...10]`,
+						searchTerms
+					);
+
+					console.log("Sanity results:", results);
+					setSearchResults(results);
+				} catch (error) {
+					console.error("Search error details:", error);
+					setSearchResults([]);
+				} finally {
+					setIsLoading(false);
+				}
+			} else {
+				console.log("Query too short:", searchQuery);
 				setSearchResults([]);
-				return;
 			}
+		};
 
-			const lowerQuery = query.toLowerCase();
+		// Debounce the search
+		timeoutId = setTimeout(performSearch, 300);
 
-			try {
-				// Adjusted search patterns using glob wildcards
-				const searchTerms = {
-					exact: lowerQuery,
-					prefix: `${lowerQuery}*`,
-					contains: `*${lowerQuery}*`,
-					fuzzy: `*${lowerQuery.split("").join("*")}*`,
-				};
+		return () => clearTimeout(timeoutId);
+	}, [searchQuery]);
 
-				const results = await client.fetch<SearchResult[]>(
-					`
-          *[_type == "post" && title != null] {
-            _id,
-            title,
-            slug,
-            "score": select(
-              lower(title) == $exact => 4,
-              lower(title) match $prefix => 3,
-              lower(title) match $contains => 2,
-              lower(title) match $fuzzy => 1,
-              0
-            )
-          }[score > 0] | order(score desc, title asc)[0...5]
-        `,
-					searchTerms
-				);
+	useEffect(() => {
+		console.log("Search results updated:", searchResults);
+	}, [searchResults]);
 
-				setSearchResults(results);
-			} catch (error) {
-				console.error("Search error:", error);
-				setSearchResults([]);
-			}
-		}, 300),
-		[]
-	);
-
-	// Handle search input change
 	const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const query = e.target.value;
 		setSearchQuery(query);
-		debouncedSearch(query);
-		setShowResults(true);
 	};
-
-	// Close search results when clicking outside
-	useEffect(() => {
-		const handleClickOutside = (event: MouseEvent) => {
-			if (
-				searchInputRef.current &&
-				!searchInputRef.current.contains(event.target as Node)
-			) {
-				setShowResults(false);
-			}
-		};
-		document.addEventListener("mousedown", handleClickOutside);
-		return () => document.removeEventListener("mousedown", handleClickOutside);
-	}, []);
-
-	// Handle scroll to make navbar transparent and blurred
-	useEffect(() => {
-		const handleScroll = () => {
-			setScrolled(window.scrollY > 0);
-		};
-
-		window.addEventListener("scroll", handleScroll);
-		return () => window.removeEventListener("scroll", handleScroll);
-	}, []);
-
-	// Update dropdown position
-	useEffect(() => {
-		const updateDropdownPosition = () => {
-			if (searchInputRef.current) {
-				const rect = searchInputRef.current.getBoundingClientRect();
-				setDropdownPosition({
-					top: rect.bottom + window.scrollY,
-					left: rect.left + window.scrollX,
-					width: rect.width,
-				});
-			}
-		};
-
-		if (showResults) {
-			updateDropdownPosition();
-			window.addEventListener("scroll", updateDropdownPosition);
-			window.addEventListener("resize", updateDropdownPosition);
-		}
-
-		return () => {
-			window.removeEventListener("scroll", updateDropdownPosition);
-			window.removeEventListener("resize", updateDropdownPosition);
-		};
-	}, [showResults]);
-
-	const username =
-		isSignedIn && user ? user.username || user.firstName || "user" : null;
 
 	const handleDeleteAccount = async () => {
 		const confirmDelete = window.confirm(
@@ -162,11 +131,20 @@ const Navbar: React.FC = () => {
 		}
 	};
 
+	// Debug logs moved here
+	useEffect(() => {
+		console.log("Rendering CommandList with:", {
+			isLoading,
+			resultsLength: searchResults.length,
+			searchQuery,
+		});
+	}, [isLoading, searchResults.length, searchQuery]);
+
 	return (
 		<>
 			<nav
 				className={`fixed top-0 w-full z-50 transition-colors duration-300 backdrop-blur-custom ${
-					scrolled
+					false
 						? "bg-white/70 dark:bg-gray-900/70 border-b border-gray-200 dark:border-gray-700"
 						: "bg-white/50 dark:bg-gray-900/50"
 				}`}
@@ -183,18 +161,14 @@ const Navbar: React.FC = () => {
 
 						{/* Right Section */}
 						<div className="flex items-center space-x-4">
-							{/* Search Bar */}
-							<div className="relative" onClick={(e) => e.stopPropagation()}>
-								<input
-									ref={searchInputRef}
-									type="text"
-									value={searchQuery}
-									onChange={handleSearchChange}
-									onFocus={() => setShowResults(true)}
-									placeholder="Search posts..."
-									className="w-full sm:w-64 px-3 py-2 bg-white/70 dark:bg-gray-800/70 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-gray-800 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 backdrop-blur-custom"
-								/>
-							</div>
+							{/* Search Button */}
+							<button
+								onClick={() => setIsCommandOpen(true)}
+								className="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
+								title="Search"
+							>
+								<Search className="h-6 w-6" />
+							</button>
 
 							{isSignedIn && (
 								<>
@@ -235,13 +209,13 @@ const Navbar: React.FC = () => {
 										</button>
 										<div
 											className="absolute right-0 mt-2 w-48 bg-white/70 dark:bg-gray-800/70 backdrop-blur-custom rounded-md shadow-lg 
-                        opacity-0 group-hover:opacity-100 
-                        transition-all duration-300 ease-in-out transform 
-                        -translate-y-1 group-hover:translate-y-0"
+                      opacity-0 group-hover:opacity-100 
+                      transition-all duration-300 ease-in-out transform 
+                      -translate-y-1 group-hover:translate-y-0"
 										>
-											{username && (
+											{user && (
 												<Link
-													href={`/profile/${username}`}
+													href={`/profile/${user.username || user.firstName || "user"}`}
 													className="block px-4 py-2 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
 												>
 													View Profile
@@ -271,9 +245,9 @@ const Navbar: React.FC = () => {
 										</button>
 										<div
 											className="absolute right-0 mt-2 w-40 bg-white/70 dark:bg-gray-800/70 backdrop-blur-custom rounded-md shadow-lg 
-                        opacity-0 group-hover:opacity-100 
-                        transition-all duration-300 ease-in-out transform 
-                        -translate-y-1 group-hover:translate-y-0"
+                      opacity-0 group-hover:opacity-100 
+                      transition-all duration-300 ease-in-out transform 
+                      -translate-y-1 group-hover:translate-y-0"
 										>
 											<button
 												onClick={() => clerk.signOut()}
@@ -315,40 +289,78 @@ const Navbar: React.FC = () => {
 				</div>
 			</nav>
 
-			{/* Render the dropdown using a portal */}
-			{showResults &&
-				searchResults.length > 0 &&
-				typeof window !== "undefined" &&
-				createPortal(
-					<div
-						className="absolute z-50 max-h-60 overflow-auto rounded-md
-              bg-white/80 dark:bg-gray-800/80 backdrop-blur-custom
-              border border-gray-300 dark:border-gray-600
-              shadow-lg"
-						style={{
-							top: dropdownPosition.top,
-							left: dropdownPosition.left,
-							width: dropdownPosition.width,
-						}}
-						onClick={(e) => e.stopPropagation()}
-					>
-						{searchResults.map((result) => (
-							<Link
-								key={result._id}
-								href={`/posts/${result.slug.current}`}
-								className="block px-4 py-2 text-gray-800 dark:text-gray-200 
-                  hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200"
-								onClick={() => {
-									setShowResults(false);
-									setSearchQuery("");
-								}}
-							>
-								{result.title}
-							</Link>
-						))}
-					</div>,
-					document.body
-				)}
+			{/* Debug Section */}
+			<div className="fixed bottom-4 right-4 z-50">
+				<button
+					onClick={async () => {
+						try {
+							console.log("Current search results:", searchResults);
+							const test = await client.fetch('*[_type == "post"][0...1]');
+							console.log("Sanity test:", test);
+						} catch (err) {
+							console.error("Sanity test error:", err);
+						}
+					}}
+					className="bg-blue-500 text-white px-4 py-2 rounded"
+				>
+					Debug Search
+				</button>
+			</div>
+
+			{/* Command Dialog for Search */}
+			<CommandDialog open={isCommandOpen} onOpenChange={setIsCommandOpen}>
+				<span className="sr-only">
+					<DialogTitle>Search Posts</DialogTitle>
+					<DialogDescription>Type to search posts</DialogDescription>
+				</span>
+				<Command
+					className="command-dialog bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl"
+					shouldFilter={false}
+				>
+					<div className="flex items-center px-3 border-b border-gray-200 dark:border-gray-700">
+						<Search className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+						<CommandInput
+							placeholder="Search posts..."
+							value={searchQuery}
+							onValueChange={(value) => setSearchQuery(value)}
+							className="flex-1 h-12 px-3 text-base bg-transparent border-0 focus:outline-none focus:ring-0 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+						/>
+					</div>
+					<CommandList className="max-h-[300px] overflow-y-auto p-2">
+						{/* Removed console.log from JSX */}
+						{isLoading ? (
+							<div className="px-4 py-6 text-sm text-center text-gray-500 dark:text-gray-400">
+								Searching...
+							</div>
+						) : searchResults.length > 0 ? (
+							<>
+								{searchResults.map((result) => (
+									<CommandItem
+										key={result._id}
+										onSelect={() => {
+											console.log("Selected:", result);
+											router.push(`/posts/${result.slug.current}`);
+											setIsCommandOpen(false);
+										}}
+										className="flex items-center px-4 py-3 space-x-2 text-sm rounded-lg cursor-pointer text-gray-900 dark:text-gray-100 hover:bg-gray-100/70 dark:hover:bg-gray-700/70 transition-colors"
+									>
+										<Search className="w-4 h-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
+										<span className="flex-1 truncate">{result.title}</span>
+									</CommandItem>
+								))}
+							</>
+						) : searchQuery.length > 0 ? (
+							<div className="px-4 py-6 text-sm text-center text-gray-500 dark:text-gray-400">
+								No results found
+							</div>
+						) : (
+							<div className="px-4 py-6 text-sm text-center text-gray-500 dark:text-gray-400">
+								Type to start searching...
+							</div>
+						)}
+					</CommandList>
+				</Command>
+			</CommandDialog>
 		</>
 	);
 };

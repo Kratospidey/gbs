@@ -6,6 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Tag } from "@/components/Tag";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useRouter } from "next/navigation";
 
 interface Author {
 	username: string;
@@ -25,6 +26,7 @@ interface Post {
 }
 
 const HomePage: React.FC = () => {
+	const router = useRouter();
 	const [posts, setPosts] = useState<Post[]>([]);
 	const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 	const [tagFilter, setTagFilter] = useState<string>("");
@@ -77,6 +79,70 @@ const HomePage: React.FC = () => {
 	const handleTagSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
 	};
+
+	const renderPosts = () => (
+		<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+			{posts.map((post) => (
+				<div
+					key={post._id}
+					className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden transition-transform transform hover:scale-105"
+				>
+					<div
+						onClick={() => router.push(`/posts/${post.slug}`)}
+						className="cursor-pointer"
+					>
+						{post.mainImageUrl && (
+							<Image
+								src={post.mainImageUrl}
+								alt={post.title}
+								width={250}
+								height={250}
+								className="w-full h-48 object-cover"
+							/>
+						)}
+						<div className="p-4">
+							<h2 className="text-xl font-semibold text-gray-800 dark:text-white hover:text-blue-500">
+								{post.title}
+							</h2>
+							<p className="text-sm text-gray-600 dark:text-gray-300">
+								Published on {new Date(post.publishedAt).toLocaleDateString()}
+								{post.author && (
+									<>
+										{" by "}
+										<button
+											onClick={(e) => {
+												e.stopPropagation();
+												router.push(`/profile/${post.author!.username}`);
+											}}
+											className="text-blue-500 hover:underline inline-block"
+										>
+											@{post.author.username}
+										</button>
+									</>
+								)}
+							</p>
+							{post.tags && (
+								<div className="mt-2 flex flex-wrap gap-2">
+									{post.tags.map((tag) => (
+										<div
+											key={tag}
+											onClick={(e) => {
+												e.stopPropagation();
+												router.push(`/tag/${tag}`);
+											}}
+											className="cursor-pointer"
+										>
+											<Tag text={tag} isEditable={false} />
+										</div>
+									))}
+								</div>
+							)}
+						</div>
+					</div>
+				</div>
+			))}
+		</div>
+	);
 
 	return (
 		<div className="min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -144,68 +210,7 @@ const HomePage: React.FC = () => {
 				)}
 
 				{/* Posts List */}
-				{!isLoading && !error && (
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-						{posts.map((post) => (
-							<Link
-								href={`/posts/${post.slug}`}
-								key={post._id}
-								className="bg-white dark:bg-gray-800 shadow-md rounded-lg overflow-hidden transition-transform transform hover:scale-105 cursor-pointer"
-							>
-								{post.mainImageUrl && (
-									<Image
-										src={post.mainImageUrl}
-										alt={post.title}
-										width={250}
-										height={250}
-										className="w-full h-48 object-cover"
-									/>
-								)}
-								<div className="p-4">
-									<h2 className="text-xl font-semibold text-gray-800 dark:text-white hover:text-blue-500">
-										{post.title}
-									</h2>
-									<p className="text-sm text-gray-600 dark:text-gray-300">
-										Published on{" "}
-										{new Date(post.publishedAt).toLocaleDateString()}{" "}
-										{post.author ? (
-											<>
-												by{" "}
-												<Link
-													href={`/profile/${post.author.username}`}
-													onClick={(e) => e.stopPropagation()}
-													className="text-blue-500 cursor-pointer"
-												>
-													@{post.author.username}
-												</Link>
-											</>
-										) : (
-											"by Unknown Author"
-										)}
-									</p>
-									{post.tags && (
-										<div className="mt-2 flex flex-wrap gap-2">
-											{post.tags.map((tag) => (
-												<div 
-													key={tag} 
-													onClick={(e) => {
-														e.preventDefault(); // Prevent post link navigation
-														e.stopPropagation(); // Stop event bubbling
-													}}
-												>
-													<Tag 
-														text={tag} 
-														isEditable={false} 
-													/>
-												</div>
-											))}
-										</div>
-									)}
-								</div>
-							</Link>
-						))}
-					</div>
-				)}
+				{!isLoading && !error && renderPosts()}
 
 				{/* No Posts Found */}
 				{!isLoading && !error && posts.length === 0 && (
