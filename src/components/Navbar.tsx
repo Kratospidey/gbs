@@ -314,11 +314,10 @@ const Navbar: React.FC = () => {
 					<DialogDescription>Type to search posts</DialogDescription>
 				</span>
 				<Command
-					className="command-dialog bg-white/80 dark:bg-gray-800/80 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl"
+					className="command-dialog bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-xl shadow-2xl"
 					shouldFilter={false}
 				>
 					<div className="flex items-center px-3 border-b border-gray-200 dark:border-gray-700">
-						{/* Removed the duplicate Search icon */}
 						<CommandInput
 							placeholder="Search posts..."
 							value={searchQuery}

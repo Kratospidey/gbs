@@ -180,3 +180,8 @@ div[cmdk-item] {
 		transform: translateY(0) translateX(-50%);
 	}
 }
+
+.border[role='dialog']
+{
+	border-width: 0px;
+}
