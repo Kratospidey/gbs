@@ -34,17 +34,17 @@ export const ThreeDPostCard: React.FC<ThreeDPostCardProps> = ({ post }) => {
 
 	return (
 		<CardContainer className="inter-var">
-			<CardBody className="bg-gray-50 relative group/card dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-auto sm:w-[30rem] h-auto rounded-xl p-6 border">
+			<CardBody className="bg-[#1f2937] relative group/card dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] dark:bg-[#1f2937] dark:border-white/[0.2] border-black/[0.1] w-auto sm:w-[21rem] h-auto rounded-xl p-6 border">
 				<CardItem
 					translateZ={50}
-					className="text-xl font-bold text-neutral-600 dark:text-white"
+					className="text-xl font-bold text-white"
 				>
 					{post.title}
 				</CardItem>
 				<CardItem
 					as="p"
 					translateZ={60}
-					className="text-neutral-500 text-sm max-w-sm mt-2 dark:text-neutral-300"
+					className="text-gray-300 text-sm max-w-sm mt-2"
 				>
 					Published on {new Date(post.publishedAt).toLocaleDateString()}
 					{post.author && (
@@ -55,7 +55,7 @@ export const ThreeDPostCard: React.FC<ThreeDPostCardProps> = ({ post }) => {
 									e.stopPropagation();
 									router.push(`/profile/${post.author!.username}`);
 								}}
-								className="text-blue-500 hover:underline inline-block"
+								className="text-blue-400 hover:underline inline-block"
 							>
 								@{post.author.username}
 							</button>
@@ -67,16 +67,16 @@ export const ThreeDPostCard: React.FC<ThreeDPostCardProps> = ({ post }) => {
 						src={post.mainImageUrl || "/default-thumbnail.jpg"}
 						height={1000}
 						width={1000}
-						className="h-60 w-full object-cover rounded-xl group-hover/card:shadow-xl"
+						className="h-40 w-full object-cover rounded-xl group-hover/card:shadow-xl"
 						alt="thumbnail"
 					/>
 				</CardItem>
-				<div className="flex justify-between items-center mt-20">
+				<div className="flex justify-between items-center mt-16">
 					<CardItem
 						translateZ={20}
 						as={Link}
 						href={`/posts/${post.slug}`}
-						className="px-4 py-2 rounded-xl text-xs font-normal dark:text-white"
+						className="px-4 py-2 rounded-xl text-xs font-normal text-white"
 					>
 						Read More →
 					</CardItem>
@@ -84,7 +84,7 @@ export const ThreeDPostCard: React.FC<ThreeDPostCardProps> = ({ post }) => {
 						translateZ={20}
 						as="button"
 						onClick={() => router.push(`/signup`)}
-						className="px-4 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-xs font-bold"
+						className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold"
 					>
 						Sign up
 					</CardItem>
