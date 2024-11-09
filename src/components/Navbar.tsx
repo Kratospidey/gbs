@@ -318,7 +318,7 @@ const Navbar: React.FC = () => {
 					shouldFilter={false}
 				>
 					<div className="flex items-center px-3 border-b border-gray-200 dark:border-gray-700">
-						<Search className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+						{/* Removed the duplicate Search icon */}
 						<CommandInput
 							placeholder="Search posts..."
 							value={searchQuery}
@@ -327,7 +327,6 @@ const Navbar: React.FC = () => {
 						/>
 					</div>
 					<CommandList className="max-h-[300px] overflow-y-auto p-2">
-						{/* Removed console.log from JSX */}
 						{isLoading ? (
 							<div className="px-4 py-6 text-sm text-center text-gray-500 dark:text-gray-400">
 								Searching...
@@ -338,7 +337,6 @@ const Navbar: React.FC = () => {
 									<CommandItem
 										key={result._id}
 										onSelect={() => {
-											console.log("Selected:", result);
 											router.push(`/posts/${result.slug.current}`);
 											setIsCommandOpen(false);
 										}}
