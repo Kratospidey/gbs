@@ -165,7 +165,7 @@ const HomePage: React.FC = () => {
 							id="sort"
 							value={sortOrder}
 							onChange={handleSortChange}
-							className="px-3 py-2 border rounded-md focus:outline-none focus:ring focus:border-blue-300"
+							className="px-3 py-2 bg-[#0a101f] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
 						>
 							<option value="desc">Newest First</option>
 							<option value="asc">Oldest First</option>
@@ -186,11 +186,11 @@ const HomePage: React.FC = () => {
 							placeholder="e.g., react, nextjs"
 							value={tagFilter}
 							onChange={handleTagFilterChange}
-							className="px-3 py-2 border rounded-md focus:outline-none focus:ring focus:border-blue-300"
+							className="px-3 py-2 bg-[#0a101f] text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
 						/>
 						<button
 							type="submit"
-							className="ml-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+							className="ml-2 px-4 py-2 bg-[#0a101f] text-white rounded-md hover:bg-[#09162b]"
 						>
 							Apply
 						</button>
