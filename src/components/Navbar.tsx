@@ -23,6 +23,7 @@ const Navbar: React.FC = () => {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
 	const [showResults, setShowResults] = useState(false);
+	const [scrolled, setScrolled] = useState(false);
 
 	// Debounced search function
 	const debouncedSearch = useCallback(
@@ -85,6 +86,20 @@ const Navbar: React.FC = () => {
 		return () => document.removeEventListener("click", handleClickOutside);
 	}, []);
 
+	// Handle scroll to make navbar transparent and blurred
+	useEffect(() => {
+		const handleScroll = () => {
+			if (window.scrollY > 0) {
+				setScrolled(true);
+			} else {
+				setScrolled(false);
+			}
+		};
+
+		window.addEventListener("scroll", handleScroll);
+		return () => window.removeEventListener("scroll", handleScroll);
+	}, []);
+
 	const username =
 		isSignedIn && user ? user.username || user.firstName || "user" : null;
 
@@ -112,7 +127,13 @@ const Navbar: React.FC = () => {
 	};
 
 	return (
-		<nav className="sticky top-0 bg-white dark:bg-gray-800 shadow-md z-50">
+		<nav
+			className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+				scrolled
+					? "bg-[rgb(17_24_39/0.8)] backdrop-blur-lg rounded-xl"
+					: "bg-[rgb(17_24_39)] rounded-xl"
+			}`}
+		>
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 				<div className="flex justify-between h-16 items-center">
 					{/* Left Section */}
@@ -138,7 +159,7 @@ const Navbar: React.FC = () => {
 
 							{/* Search Results Dropdown */}
 							{showResults && searchResults.length > 0 && (
-								<div className="absolute w-full mt-1 bg-white dark:bg-gray-700 border rounded-md shadow-lg max-h-60 overflow-auto">
+								<div className="absolute w-full mt-1 bg-white dark:bg-gray-700 rounded-md shadow-lg max-h-60 overflow-auto">
 									{searchResults.map((result) => (
 										<Link
 											key={result._id}
@@ -195,11 +216,10 @@ const Navbar: React.FC = () => {
 									</button>
 									<div
 										className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-700 rounded-md shadow-lg 
-											invisible group-hover:visible opacity-0 group-hover:opacity-100 
-											transition-all duration-300 ease-in-out transform 
-											-translate-y-1 group-hover:translate-y-0
-											group-hover:delay-100
-											before:content-[''] before:absolute before:top-[-10px] before:left-0 before:w-full before:h-[10px]"
+                      opacity-0 group-hover:opacity-100 
+                      transition-all duration-300 ease-in-out transform 
+                      -translate-y-1 group-hover:translate-y-0
+                      before:content-[''] before:absolute before:top-[-10px] before:left-0 before:w-full before:h-[10px]"
 									>
 										{username && (
 											<Link
@@ -223,7 +243,7 @@ const Navbar: React.FC = () => {
 									<ModeToggle />
 								</div>
 
-								{/* Cog Icon Dropdown */}
+								{/* Settings Dropdown */}
 								<div className="relative group">
 									<button
 										className="text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white"
@@ -233,11 +253,10 @@ const Navbar: React.FC = () => {
 									</button>
 									<div
 										className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-700 rounded-md shadow-lg 
-											invisible group-hover:visible opacity-0 group-hover:opacity-100 
-											transition-all duration-300 ease-in-out transform 
-											-translate-y-1 group-hover:translate-y-0
-											group-hover:delay-100
-											before:content-[''] before:absolute before:top-[-10px] before:left-0 before:w-full before:h-[10px]"
+                      opacity-0 group-hover:opacity-100 
+                      transition-all duration-300 ease-in-out transform 
+                      -translate-y-1 group-hover:translate-y-0
+                      before:content-[''] before:absolute before:top-[-10px] before:left-0 before:w-full before:h-[10px]"
 									>
 										<button
 											onClick={() => clerk.signOut()}

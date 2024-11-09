@@ -21,7 +21,10 @@ export default function RootLayout({
 			<body className={inter.className}>
 				<RootLayoutClient>
 					<Navbar />
-					{children}
+					<div className="pt-16">
+						{/* Your main content */}
+						{children}
+					</div>
 				</RootLayoutClient>
 			</body>
 		</html>
