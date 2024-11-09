@@ -7,7 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import client from "@/lib/sanityClient";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, Clock, Calendar, Share2 } from "lucide-react";
+import { ArrowUp, Clock, Calendar, Share2, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { FaBookmark } from "react-icons/fa";
 import { User2 } from "lucide-react";
@@ -71,6 +71,7 @@ const PostDetailPage = () => {
 	const [post, setPost] = useState<PostDetail | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isSaved, setIsSaved] = useState(false);
+	const [isShared, setIsShared] = useState(false); // Added state for share button
 
 	useEffect(() => {
 		const fetchPostAndSaveStatus = async () => {
@@ -223,6 +224,10 @@ const PostDetailPage = () => {
 	const sharePost = () => {
 		navigator.clipboard.writeText(window.location.href);
 		toast.success("Link copied to clipboard!");
+		setIsShared(true); // Set shared state to true
+		setTimeout(() => {
+			setIsShared(false); // Reset after 2 seconds
+		}, 2000);
 	};
 
 	if (isLoading)
@@ -398,7 +403,11 @@ const PostDetailPage = () => {
 						size="icon"
 						className="p-2 rounded-full shadow-lg backdrop-blur-sm hover:scale-110 transition-transform"
 					>
-						<Share2 className="h-5 w-5" />
+						{isShared ? (
+							<Check className="h-5 w-5 text-green-500" />
+						) : (
+							<Share2 className="h-5 w-5" />
+						)}
 					</Button>
 				</div>
 			</>
