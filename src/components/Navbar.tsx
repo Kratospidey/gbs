@@ -165,7 +165,7 @@ const Navbar: React.FC = () => {
 	return (
 		<>
 			<nav
-				className={`fixed top-0 w-full z-50 transition-colors duration-300 backdrop-blur-md ${
+				className={`fixed top-0 w-full z-50 transition-colors duration-300 backdrop-blur-custom ${
 					scrolled
 						? "bg-white/70 dark:bg-gray-900/70 border-b border-gray-200 dark:border-gray-700"
 						: "bg-white/50 dark:bg-gray-900/50"
@@ -192,7 +192,7 @@ const Navbar: React.FC = () => {
 									onChange={handleSearchChange}
 									onFocus={() => setShowResults(true)}
 									placeholder="Search posts..."
-									className="w-full sm:w-64 px-3 py-2 bg-white/70 dark:bg-gray-800/70 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-gray-800 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 backdrop-blur-md"
+									className="w-full sm:w-64 px-3 py-2 bg-white/70 dark:bg-gray-800/70 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-gray-800 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 backdrop-blur-custom"
 								/>
 							</div>
 
@@ -234,7 +234,7 @@ const Navbar: React.FC = () => {
 											<User className="h-6 w-6" />
 										</button>
 										<div
-											className="absolute right-0 mt-2 w-48 bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-md shadow-lg 
+											className="absolute right-0 mt-2 w-48 bg-white/70 dark:bg-gray-800/70 backdrop-blur-custom rounded-md shadow-lg 
                         opacity-0 group-hover:opacity-100 
                         transition-all duration-300 ease-in-out transform 
                         -translate-y-1 group-hover:translate-y-0"
@@ -270,7 +270,7 @@ const Navbar: React.FC = () => {
 											<Cog className="h-6 w-6" />
 										</button>
 										<div
-											className="absolute right-0 mt-2 w-40 bg-white/70 dark:bg-gray-800/70 backdrop-blur-md rounded-md shadow-lg 
+											className="absolute right-0 mt-2 w-40 bg-white/70 dark:bg-gray-800/70 backdrop-blur-custom rounded-md shadow-lg 
                         opacity-0 group-hover:opacity-100 
                         transition-all duration-300 ease-in-out transform 
                         -translate-y-1 group-hover:translate-y-0"
@@ -322,7 +322,7 @@ const Navbar: React.FC = () => {
 				createPortal(
 					<div
 						className="absolute z-50 max-h-60 overflow-auto rounded-md
-              bg-white/80 dark:bg-gray-800/80 backdrop-blur-md
+              bg-white/80 dark:bg-gray-800/80 backdrop-blur-custom
               border border-gray-300 dark:border-gray-600
               shadow-lg"
 						style={{

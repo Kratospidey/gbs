@@ -64,10 +64,11 @@ const config: Config = {
       },
       backdropBlur: {
         '2xl': '40px',
+        'custom': '12px', // Adjust this value to control the blur amount
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate")  ],
 };
 
 export default config;
