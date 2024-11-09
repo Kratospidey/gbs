@@ -30,9 +30,11 @@ interface UserPost {
 	id: string;
 	title: string;
 	created_at: string;
+	publishedAt?: string;
 	image_url?: string;
 	slug: string;
 	tags?: string[];
+	status?: "pending" | "published" | "draft" | "archived"; // Made 'status' optional
 }
 
 const UserProfilePage = () => {
@@ -55,7 +57,30 @@ const UserProfilePage = () => {
 				if (!res.ok) throw new Error(data.error);
 
 				setUser(data.user);
-				setPosts(data.posts);
+
+				console.log("All Posts:", data.posts); // Debug log
+
+				// Enhanced filter logic
+				const filteredPosts = data.posts.filter((post: UserPost) => {
+					if (post.status) {
+						const status = post.status.trim().toLowerCase();
+						console.log(`Post ID: ${post.id}, Status: ${status}`); // Debug log
+						return status === "published";
+					} else if (post.publishedAt) {
+						console.log(
+							`Post ID: ${post.id}, Published At: ${post.publishedAt}`
+						); // Debug log
+						return true;
+					}
+					console.warn(
+						`Post ID: ${post.id} is missing the status field and 'publishedAt'.`
+					);
+					return false;
+				});
+
+				console.log("Published Posts:", filteredPosts); // Debug log
+
+				setPosts(filteredPosts);
 			} catch (error) {
 				console.error("Error:", error);
 			} finally {
