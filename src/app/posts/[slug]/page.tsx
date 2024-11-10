@@ -10,8 +10,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowUp, Clock, Calendar, Share2, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { FaBookmark } from "react-icons/fa";
-import { User2 } from "lucide-react";
-import { FaLinkedin, FaGithub, FaGlobe } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import Link from "next/link";
 import { Tag } from "@/components/Tag";
@@ -19,7 +17,8 @@ import { useUser } from "@clerk/nextjs";
 import { nanoid } from "nanoid";
 import Image from "next/image";
 import Giscus from "@giscus/react";
-import { TracingBeam } from "@/components/ui/tracing-beam"; // Import TracingBeam
+import { TracingBeam } from "@/components/ui/tracing-beam";
+import { useIsDesktop } from "@/hooks/useIsDesktop"; // Import the custom hook
 
 interface Post {
 	_id: string;
@@ -73,6 +72,8 @@ const PostDetailPage = () => {
 	const [isLoading, setIsLoading] = useState(true);
 	const [isSaved, setIsSaved] = useState(false);
 	const [isShared, setIsShared] = useState(false); // Added state for share button
+
+	const isDesktop = useIsDesktop(); // Use the custom hook
 
 	useEffect(() => {
 		const fetchPostAndSaveStatus = async () => {
@@ -250,8 +251,8 @@ const PostDetailPage = () => {
 			</div>
 		);
 
-	return (
-		<TracingBeam className="min-h-screen bg-gray-50 dark:bg-gray-900">
+	const Content = (
+		<>
 			{/* Hero Section */}
 			<div className="relative h-[50vh] w-full">
 				<div className="absolute inset-0">
@@ -412,7 +413,13 @@ const PostDetailPage = () => {
 					</Button>
 				</div>
 			</>
-			</TracingBeam>
+		</>
+	);
+
+	return isDesktop ? (
+		<TracingBeam className="bg-gray-50 dark:bg-gray-900">{Content}</TracingBeam>
+	) : (
+		<div className="bg-gray-50 dark:bg-gray-900">{Content}</div>
 	);
 };
 
