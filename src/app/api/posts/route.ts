@@ -4,6 +4,10 @@ import sanityClient from "@/lib/sanityClient";
 import { supabase } from "@/lib/supabaseClient";
 import { getClerkUserByUsername } from "@/lib/getClerkUserByUsername";
 
+// Add Route Segment Config
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 interface Author {
 	username: string;
 	firstName: string;
@@ -152,11 +156,9 @@ export async function GET(request: Request) {
 
 		return NextResponse.json({ posts: enrichedPosts }, { status: 200 });
 	} catch (error) {
-		const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+		const errorMessage =
+			error instanceof Error ? error.message : "An unknown error occurred";
 		console.error("Error fetching posts:", errorMessage);
-		return NextResponse.json(
-			{ error: errorMessage },
-			{ status: 500 }
-		);
+		return NextResponse.json({ error: errorMessage }, { status: 500 });
 	}
 }
