@@ -19,6 +19,7 @@ import { useUser } from "@clerk/nextjs";
 import { nanoid } from "nanoid";
 import Image from "next/image";
 import Giscus from "@giscus/react";
+import { TracingBeam } from "@/components/ui/tracing-beam"; // Import TracingBeam
 
 interface Post {
 	_id: string;
@@ -250,7 +251,7 @@ const PostDetailPage = () => {
 		);
 
 	return (
-		<div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+		<TracingBeam className="min-h-screen bg-gray-50 dark:bg-gray-900">
 			{/* Hero Section */}
 			<div className="relative h-[50vh] w-full">
 				<div className="absolute inset-0">
@@ -411,7 +412,7 @@ const PostDetailPage = () => {
 					</Button>
 				</div>
 			</>
-		</div>
+			</TracingBeam>
 	);
 };
 
