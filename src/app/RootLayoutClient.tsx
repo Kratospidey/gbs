@@ -55,12 +55,6 @@ export default function RootLayoutClient({ children }: RootLayoutClientProps) {
 
 					{/* Content */}
 					<div className="relative">
-						<SignedOut>
-							<SignInButton />
-						</SignedOut>
-						<SignedIn>
-							<UserButton />
-						</SignedIn>
 						{children}
 					</div>
 				</div>
