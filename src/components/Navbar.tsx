@@ -182,38 +182,61 @@ const Navbar: React.FC = () => {
 		post.title.toLowerCase().includes(commandInputValue.toLowerCase())
 	);
 
+	const navbarClasses =
+		"bg-zinc-900/80 backdrop-blur-md border border-zinc-800";
+	const commandDialogClasses =
+		"bg-zinc-900/95 border border-zinc-800 backdrop-blur-sm";
+
+	const commandItemStyle = `
+		text-zinc-300 
+		hover:bg-zinc-800/50 
+		hover:text-zinc-100 
+		transition-colors 
+		duration-200 
+		rounded-md
+	`;
+
 	return (
 		<>
 			<FloatingDock
 				items={items}
-				desktopClassName="fixed bottom-4 left-1/2 transform -translate-x-1/2"
-				mobileClassName="fixed bottom-4 right-4"
+				desktopClassName={`fixed bottom-4 left-1/2 transform -translate-x-1/2 p-1 rounded-full shadow-lg transition-all duration-300 ease-in-out ${navbarClasses}`}
+				mobileClassName={`fixed bottom-4 right-4 p-1 rounded-full shadow-lg transition-all duration-300 ease-in-out ${navbarClasses}`}
+				itemClassName="text-zinc-400 hover:text-zinc-100 transition-colors duration-200"
 			/>
 			<CommandDialog open={isCommandOpen} onOpenChange={setIsCommandOpen}>
-				<VisuallyHidden>
-					<DialogTitle>Search</DialogTitle>
-				</VisuallyHidden>
-				<CommandInput
-					placeholder="Search posts..."
-					value={commandInputValue}
-					onValueChange={setCommandInputValue}
-				/>
-				<CommandList>
-					{isLoadingSearch ? (
-						<CommandItem disabled>Loading...</CommandItem>
-					) : filteredResults.length > 0 ? (
-						filteredResults.map((post) => (
-							<CommandItem
-								key={post._id}
-								onSelect={() => router.push(`/posts/${post.slug}`)}
-							>
-								{post.title}
+				<div className={commandDialogClasses}>
+					<VisuallyHidden>
+						<DialogTitle>Search</DialogTitle>
+					</VisuallyHidden>
+					<CommandInput
+						placeholder="Search posts..."
+						value={commandInputValue}
+						onValueChange={setCommandInputValue}
+						className="bg-transparent border-b border-zinc-800 text-zinc-100 placeholder-zinc-500 focus:ring-0"
+					/>
+					<CommandList className="bg-transparent">
+						{isLoadingSearch ? (
+							<CommandItem disabled className={commandItemStyle}>
+								Loading...
 							</CommandItem>
-						))
-					) : (
-						<CommandItem disabled>No results found.</CommandItem>
-					)}
-				</CommandList>
+						) : filteredResults.length > 0 ? (
+							filteredResults.map((post) => (
+								<CommandItem
+									key={post._id}
+									onSelect={() => router.push(`/posts/${post.slug}`)}
+									className={commandItemStyle}
+								>
+									{post.title}
+								</CommandItem>
+							))
+						) : (
+							<CommandItem disabled className={commandItemStyle}>
+								No results found.
+							</CommandItem>
+						)}
+					</CommandList>
+				</div>
 			</CommandDialog>
 		</>
 	);

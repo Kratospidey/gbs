@@ -96,14 +96,20 @@ const DockButton: React.FC<DockButtonProps> = ({
 	}
 };
 
-export const FloatingDock = ({
-	items,
-	desktopClassName,
-	mobileClassName,
-}: {
+interface FloatingDockProps {
 	items: DockItem[];
 	desktopClassName?: string;
 	mobileClassName?: string;
+	className?: string;
+	itemClassName?: string; // Add this to match usage
+}
+
+export const FloatingDock: React.FC<FloatingDockProps> = ({
+	items,
+	desktopClassName,
+	mobileClassName,
+	className,
+	itemClassName,
 }) => {
 	return (
 		<>

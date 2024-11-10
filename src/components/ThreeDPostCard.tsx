@@ -34,28 +34,28 @@ export const ThreeDPostCard: React.FC<ThreeDPostCardProps> = ({ post }) => {
 
 	return (
 		<CardContainer className="inter-var">
-			<CardBody className="bg-[#1f2937] relative group/card dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] dark:bg-[#1f2937] dark:border-white/[0.2] border-black/[0.1] w-auto sm:w-[21rem] h-auto rounded-xl p-6 border">
+			<CardBody className="relative group/card bg-zinc-950/90 dark:hover:shadow-lg dark:hover:shadow-zinc-200/[0.1] border-zinc-800 w-auto sm:w-[21rem] h-auto rounded-lg p-6 border transition-colors">
 				<CardItem
 					translateZ={50}
-					className="text-xl font-bold text-white"
+					className="text-xl font-semibold text-zinc-100 tracking-tight"
 				>
 					{post.title}
 				</CardItem>
 				<CardItem
 					as="p"
 					translateZ={60}
-					className="text-gray-300 text-sm max-w-sm mt-2"
+					className="text-zinc-400 text-sm max-w-sm mt-2 font-light"
 				>
-					Published on {new Date(post.publishedAt).toLocaleDateString()}
+					{new Date(post.publishedAt).toLocaleDateString()}
 					{post.author && (
 						<>
-							{" by "}
+							{" · "}
 							<button
 								onClick={(e) => {
 									e.stopPropagation();
 									router.push(`/profile/${post.author!.username}`);
 								}}
-								className="text-blue-400 hover:underline inline-block"
+								className="text-zinc-300 hover:text-white transition-colors inline-block"
 							>
 								@{post.author.username}
 							</button>
@@ -67,37 +67,34 @@ export const ThreeDPostCard: React.FC<ThreeDPostCardProps> = ({ post }) => {
 						src={post.mainImageUrl || "/default-thumbnail.jpg"}
 						height={1000}
 						width={1000}
-						className="h-40 w-full object-cover rounded-xl group-hover/card:shadow-xl"
+						className="h-40 w-full object-cover rounded-md transition-all duration-300"
 						alt="thumbnail"
 					/>
 				</CardItem>
-				<div className="flex justify-between items-center mt-16">
+				<div className="flex justify-center mt-12">
 					<CardItem
 						translateZ={20}
 						as={Link}
 						href={`/posts/${post.slug}`}
-						className="px-4 py-2 rounded-xl text-xs font-normal text-white"
+						className="text-xs text-zinc-400 hover:text-white transition-colors"
 					>
 						Read More →
 					</CardItem>
-					<CardItem
-						translateZ={20}
-						as="button"
-						onClick={() => router.push(`/signup`)}
-						className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold"
-					>
-						Sign up
-					</CardItem>
 				</div>
 				{post.tags && (
-					<div className="mt-2 flex flex-wrap gap-2">
+					<div className="mt-4 flex flex-wrap gap-2">
 						{post.tags.map((tag) => (
 							<div
 								key={tag}
 								onClick={() => router.push(`/tag/${tag}`)}
 								className="cursor-pointer"
 							>
-								<Tag text={tag} isEditable={false} />
+								<CardItem
+									translateZ={20}
+									className="px-2 py-1 text-[10px] font-medium bg-zinc-900 text-zinc-400 rounded-md hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
+								>
+									{tag}
+								</CardItem>
 							</div>
 						))}
 					</div>

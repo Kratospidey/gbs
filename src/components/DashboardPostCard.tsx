@@ -10,6 +10,48 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { CardBody, CardContainer, CardItem } from "./ui/3d-card";
 
+// Common styles to apply across all cards
+const commonCardBody = `
+  relative group/card 
+  bg-zinc-950/90 
+  dark:hover:shadow-lg 
+  dark:hover:shadow-zinc-200/[0.1] 
+  border-zinc-800 
+  w-auto sm:w-[21rem] 
+  h-auto 
+  rounded-lg 
+  p-6 
+  border 
+  transition-colors
+`;
+
+const commonButton = `
+  px-4 py-2 
+  rounded-md 
+  bg-zinc-800 
+  hover:bg-zinc-700 
+  text-zinc-100 
+  text-xs 
+  font-medium 
+  transition-colors
+`;
+
+const getStatusStyle = (status: Post['status']) => {
+  const baseStyle = "px-2 py-1 rounded-md text-[10px] font-medium transition-colors";
+  switch (status) {
+    case "published":
+      return `${baseStyle} bg-zinc-800 text-zinc-100`;
+    case "draft":
+      return `${baseStyle} bg-zinc-900 text-zinc-400`;
+    case "pending":
+      return `${baseStyle} bg-zinc-800 text-zinc-300`;
+    case "archived":
+      return `${baseStyle} bg-zinc-900 text-zinc-500`;
+    default:
+      return `${baseStyle} bg-zinc-900 text-zinc-400`;
+  }
+};
+
 interface Author {
 	username: string;
 	firstName: string;
@@ -69,14 +111,22 @@ const DashboardPostCard: React.FC<DashboardPostCardProps> = ({
 
 	return (
 		<CardContainer className="inter-var">
-			<CardBody className="bg-gray-800 relative group/card dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] dark:bg-[#1f2937] dark:border-white/[0.2] border-black/[0.1] w-auto sm:w-[21rem] h-auto rounded-xl p-6 border">
-				<CardItem
-					translateZ={50}
-					className="text-xl font-semibold text-white cursor-pointer"
-					onClick={handleView}
-				>
-					{post.title}
-				</CardItem>
+			<CardBody className={commonCardBody}>
+				<div className="flex justify-between items-start mb-4">
+					<CardItem
+						translateZ={50}
+						className="text-xl font-semibold text-zinc-100 tracking-tight cursor-pointer"
+						onClick={handleView}
+					>
+						{post.title}
+					</CardItem>
+					<CardItem
+						translateZ={20}
+						className={getStatusStyle(post.status)}
+					>
+						{post.status.charAt(0).toUpperCase() + post.status.slice(1)}
+					</CardItem>
+				</div>
 				<CardItem
 					as="p"
 					translateZ={60}
@@ -98,7 +148,7 @@ const DashboardPostCard: React.FC<DashboardPostCardProps> = ({
 						<Button
 							onClick={handleEdit}
 							disabled={isPending}
-							className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md disabled:opacity-50"
+							className="bg-zinc-800 hover:bg-zinc-700 text-zinc-100 disabled:opacity-50"
 						>
 							Edit
 						</Button>
@@ -107,13 +157,13 @@ const DashboardPostCard: React.FC<DashboardPostCardProps> = ({
 						<>
 							<Button
 								onClick={handleUnarchive}
-								className="bg-black text-white hover:bg-gray-700 px-4 py-2 rounded-md"
+								className={commonButton}
 							>
 								Unarchive
 							</Button>
 							<Button
 								onClick={handleDelete}
-								className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md"
+								className={commonButton}
 							>
 								Delete
 							</Button>
@@ -124,7 +174,7 @@ const DashboardPostCard: React.FC<DashboardPostCardProps> = ({
 								<Button
 									onClick={handleArchive}
 									disabled={isPending}
-									className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md disabled:opacity-50"
+									className={`${commonButton} disabled:opacity-50`}
 								>
 									Archive
 								</Button>
@@ -132,7 +182,7 @@ const DashboardPostCard: React.FC<DashboardPostCardProps> = ({
 							<Button
 								onClick={handleDelete}
 								disabled={isPending}
-								className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md disabled:opacity-50"
+								className={`${commonButton} disabled:opacity-50`}
 							>
 								Delete
 							</Button>
@@ -141,7 +191,18 @@ const DashboardPostCard: React.FC<DashboardPostCardProps> = ({
 				</div>
 				<div className="mt-4 flex flex-wrap gap-2">
 					{post.tags?.map((tag) => (
-						<Tag key={tag} text={tag} isEditable={false} />
+						<div
+							key={tag}
+							onClick={() => router.push(`/tag/${tag}`)}
+							className="cursor-pointer"
+						>
+							<CardItem
+								translateZ={20}
+								className="px-2 py-1 text-[10px] font-medium bg-zinc-900 text-zinc-400 rounded-md hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
+							>
+								{tag}
+							</CardItem>
+						</div>
 					))}
 				</div>
 				<ToastContainer />

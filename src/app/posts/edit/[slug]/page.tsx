@@ -206,105 +206,115 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 dark:bg-gray-900 dark:text-white">
-      <DarkModeToggle />
-      <Card className="dark:bg-gray-800 dark:border-gray-700">
-        <CardHeader>
-          <CardTitle className="dark:text-white">Edit Post</CardTitle>
-          <CardDescription className="dark:text-gray-300">
-            Modify the details of your blog post.
+    <div className="container max-w-4xl mx-auto p-6">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Edit Post</h1>
+          <p className="text-sm text-muted-foreground">
+            Modify and update your blog post
+          </p>
+        </div>
+        <DarkModeToggle />
+      </div>
+      
+      <Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white/50 dark:bg-zinc-950/50 backdrop-blur-xl">
+        <CardHeader className="backdrop-blur-xl">
+          <CardTitle className="text-xl font-semibold">Post Details</CardTitle>
+          <CardDescription>
+            Update the information below to modify your post
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-4">
-            {/* Title Field */}
-            <div>
-              <Label htmlFor="title" className="dark:text-white">
-                Title
-              </Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter post title"
-                className="dark:bg-gray-700 dark:text-white"
-              />
-            </div>
+        
+        <CardContent className="space-y-6">
+          {/* Title Field */}
+          <div className="space-y-2">
+            <Label htmlFor="title" className="text-sm font-medium">
+              Title <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter post title"
+              className="h-10 border-zinc-200 dark:border-zinc-800"
+            />
+          </div>
 
-            {/* Content Field */}
-            <div>
-              <Label htmlFor="content" className="dark:text-white">
-                Content
-              </Label>
-              <div className="prose-container border rounded-md p-4 dark:bg-gray-700">
-                <MarkdownEditor
-                  initialContent={content}
-                  onChange={(newContent) => setContent(newContent)}
-                />
-              </div>
-            </div>
-
-            {/* Main Image Field */}
-            <div>
-              <Label htmlFor="mainImage" className="dark:text-white">
-                Main Image
-              </Label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  if (e.target.files?.[0]) {
-                    setMainImage(e.target.files[0]);
-                  }
-                }}
-                className="dark:bg-gray-700 dark:text-white"
+          {/* Content Field */}
+          <div className="space-y-2">
+            <Label htmlFor="content" className="text-sm font-medium">
+              Content <span className="text-red-500">*</span>
+            </Label>
+            <div className="prose-container rounded-md border border-zinc-200 dark:border-zinc-800">
+              <MarkdownEditor
+                initialContent={content}
+                onChange={(newContent) => setContent(newContent)}
               />
-              {existingMainImageUrl && (
-                <Image
-                  src={existingMainImageUrl}
-                  alt="Existing Main Image"
-                  width={250}
-                  height={250}
-                  className="mt-4 rounded-md"
-                />
-              )}
-            </div>
-
-            {/* Tags Field */}
-            <div className="mb-4">
-              <input
-                type="text"
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value)}
-                onKeyDown={handleTagInput}
-                placeholder="Add tags (press Enter or comma to add)"
-                className="w-full p-2 border rounded"
-              />
-              <div className="flex flex-wrap mt-2">
-                {tags.map((tag) => (
-                  <Tag
-                    key={tag}
-                    text={tag}
-                    isEditable={true}
-                    onClick={() => setTags(tags.filter((t) => t !== tag))}
-                  />
-                ))}
-              </div>
             </div>
           </div>
+
+          {/* Main Image Field */}
+          <div className="space-y-2">
+            <Label htmlFor="mainImage" className="text-sm font-medium">
+              Featured Image
+            </Label>
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                if (e.target.files?.[0]) {
+                  setMainImage(e.target.files[0]);
+                }
+              }}
+              className="h-10 border-zinc-200 dark:border-zinc-800"
+            />
+            {existingMainImageUrl && (
+              <Image
+                src={existingMainImageUrl}
+                alt="Existing Main Image"
+                width={250}
+                height={250}
+                className="mt-2 rounded-md"
+              />
+            )}
+          </div>
+
+          {/* Tags Field */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Tags</Label>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {tags.map((tag) => (
+                <Tag
+                  key={tag}
+                  text={tag}
+                  isEditable={true}
+                  onClick={() => setTags(tags.filter((t) => t !== tag))}
+                />
+              ))}
+            </div>
+            <Input
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={handleTagInput}
+              placeholder="Add tags (press Enter or comma to add)"
+              className="h-10 border-zinc-200 dark:border-zinc-800"
+            />
+          </div>
         </CardContent>
-        <CardFooter className="flex justify-end space-x-4">
+
+        <CardFooter className="flex justify-end space-x-4 pt-6">
           <Button
+            variant="outline"
             onClick={() => handleSubmit("draft")}
             disabled={isLoading}
-            className="bg-gray-500 text-white"
+            className="h-9 border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800"
           >
             {isLoading ? "Saving..." : "Save Draft"}
           </Button>
           <Button
             onClick={() => handleSubmit("published")}
             disabled={isLoading}
-            className="bg-blue-600 text-white"
+            className="h-9 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-50 dark:hover:bg-zinc-200 dark:text-zinc-900"
           >
             {isLoading ? "Updating..." : "Update"}
           </Button>

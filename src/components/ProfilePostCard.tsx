@@ -39,10 +39,10 @@ const ProfilePostCard: React.FC<ProfilePostCardProps> = ({ post }) => {
 
 	return (
 		<CardContainer className="inter-var">
-			<CardBody className="bg-gray-800 relative group/card dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] dark:bg-[#1f2937] dark:border-white/[0.2] border-black/[0.1] w-auto sm:w-[21rem] h-auto rounded-xl p-6 border">
+			<CardBody className="relative group/card bg-zinc-950/90 dark:hover:shadow-lg dark:hover:shadow-zinc-200/[0.1] border-zinc-800 w-auto sm:w-[21rem] h-auto rounded-lg p-6 border transition-colors">
 				<CardItem
 					translateZ={50}
-					className="text-xl font-semibold text-white cursor-pointer"
+					className="text-xl font-semibold text-zinc-100 tracking-tight cursor-pointer"
 					onClick={handleView}
 				>
 					{post.title}
@@ -50,7 +50,7 @@ const ProfilePostCard: React.FC<ProfilePostCardProps> = ({ post }) => {
 				<CardItem
 					as="p"
 					translateZ={60}
-					className="text-gray-400 text-sm max-w-sm mt-2"
+					className="text-zinc-400 text-sm max-w-sm mt-2"
 				>
 					Published on {new Date(post.publishedAt).toLocaleDateString()}
 				</CardItem>
@@ -61,13 +61,23 @@ const ProfilePostCard: React.FC<ProfilePostCardProps> = ({ post }) => {
 							alt={post.title}
 							width={400}
 							height={200}
-							className="h-40 w-full object-cover rounded-xl group-hover/card:shadow-xl"
+							className="h-40 w-full object-cover rounded-md transition-all duration-300"
 						/>
 					</CardItem>
 				)}
 				<div className="mt-4 flex flex-wrap gap-2">
 					{post.tags?.map((tag) => (
-						<Tag key={tag} text={tag} isEditable={false} />
+						<div
+							key={tag}
+							className="cursor-pointer"
+						>
+							<CardItem
+								translateZ={20}
+								className="px-2 py-1 text-[10px] font-medium bg-zinc-900 text-zinc-400 rounded-md hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
+							>
+								{tag}
+							</CardItem>
+						</div>
 					))}
 				</div>
 			</CardBody>

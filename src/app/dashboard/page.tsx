@@ -222,11 +222,17 @@ const DashboardPage: React.FC = () => {
 						key={label}
 						onClick={() => setFilter(value)}
 						variant={filter === value ? "default" : "outline"}
-						className={`px-4 py-2 rounded-md transition-colors ${
-							filter === value
-								? "bg-indigo-600 text-white"
-								: "border border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white"
-						}`}
+						className={`
+							px-4 py-2 
+							rounded-md 
+							transition-colors 
+							text-xs 
+							font-medium
+							${filter === value 
+								? "bg-zinc-800 text-zinc-100 hover:bg-zinc-700" 
+								: "bg-zinc-950/40 backdrop-blur-sm border border-zinc-800 text-zinc-300 hover:bg-zinc-900 hover:text-zinc-100"
+							}
+						`}
 					>
 						{label}
 					</Button>
