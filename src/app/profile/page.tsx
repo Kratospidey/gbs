@@ -225,7 +225,6 @@ const ProfilePage: React.FC = () => {
 
 	return (
 		<div className="max-w-2xl mx-auto p-6 dark:bg-gray-900 dark:text-white">
-			<DarkModeToggle />
 			<Card className="dark:bg-gray-800 dark:border-gray-700">
 				<CardHeader>
 					<CardTitle className="dark:text-white">Edit Profile</CardTitle>

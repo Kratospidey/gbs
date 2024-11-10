@@ -1,25 +1,19 @@
 // components/SavedPostsList.tsx
-import PostCard from "./PostCard";
-import { Post } from "@/types/post";
+import React from "react";
+import SavedPostCard from "./SavedPostCard";
 
 interface SavedPostsListProps {
-	posts: {
-		post: Post;
-		savedAt: string;
-	}[];
+  posts: any[];
 }
 
-export default function SavedPostsList({ posts }: SavedPostsListProps) {
-	return (
-		<div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-			{posts.map(({ post, savedAt }) => (
-				<div key={post._id}>
-					<PostCard post={{ ...post, status: "published" }} />
-					<p className="mt-2 text-sm text-gray-500">
-						Saved on {new Date(savedAt).toLocaleDateString()}
-					</p>
-				</div>
-			))}
-		</div>
-	);
-}
+const SavedPostsList: React.FC<SavedPostsListProps> = ({ posts }) => {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {posts.map((post) => (
+        <SavedPostCard key={post.post._id} post={post} />
+      ))}
+    </div>
+  );
+};
+
+export default SavedPostsList;

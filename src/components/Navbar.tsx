@@ -118,7 +118,7 @@ const Navbar: React.FC = () => {
 							},
 							{
 								title: "Edit Profile",
-								href: "/profile/edit",
+								href: "/profile",
 								icon: <IconEdit className="h-5 w-5" />,
 							},
 						],

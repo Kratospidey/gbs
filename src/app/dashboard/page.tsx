@@ -1,3 +1,4 @@
+// src/app/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -11,6 +12,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Tag } from "@/components/Tag";
 import Image from "next/image";
+import DashboardPostCard from "@/components/DashboardPostCard"; // Import the component
 
 // Define nested interfaces
 interface Slug {
@@ -207,9 +209,8 @@ const DashboardPage: React.FC = () => {
 	};
 
 	return (
-		<div className="max-w-5xl mx-auto p-6 dark:bg-gray-900 dark:text-white">
+		<div className="max-w-5xl mx-auto p-6 dark:text-white">
 			<ToastContainer />
-			<DarkModeToggle />
 			<h1 className="text-4xl font-bold mb-6 text-center text-foreground">
 				My Posts
 			</h1>
@@ -233,135 +234,29 @@ const DashboardPage: React.FC = () => {
 			</div>
 
 			{/* Post Cards */}
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-40">
 				{isLoading ? (
 					<p className="text-center text-muted-foreground">Loading...</p>
 				) : posts.length > 0 ? (
-					posts.map((post: Post) => {
-						const isClickable = post.status === "published";
-						return (
-							<div
-								key={post._id}
-								className="bg-gray-800 rounded-lg shadow-md overflow-hidden"
-							>
-								{/* Clickable area for blog post */}
-								<div
-									onClick={() =>
-										isClickable
-											? router.push(`/posts/${post.slug.current}`)
-											: null
-									}
-									className={`cursor-${isClickable ? "pointer" : "not-allowed"} ${
-										!isClickable ? "opacity-70" : ""
-									}`}
-								>
-									{post.mainImage?.asset?.url && (
-										<Image
-											src={post.mainImage.asset.url}
-											alt={post.title}
-											width={400}
-											height={200}
-											className={`w-full h-48 object-cover ${
-												isClickable
-													? "transition-transform transform hover:scale-105"
-													: ""
-											}`}
-										/>
-									)}
-									<div className="p-4">
-										<h2 className="text-xl font-semibold text-white mb-2">
-											{post.title}
-											{post.status === "pending" && (
-												<span className="ml-2 text-sm text-yellow-400">
-													(Pending Review)
-												</span>
-											)}
-											{post.status === "draft" && (
-												<span className="ml-2 text-sm text-gray-400">
-													(Draft)
-												</span>
-											)}
-										</h2>
-										<p className="text-sm text-gray-400">
-											{new Date(post.publishedAt).toLocaleDateString()}
-										</p>
-									</div>
-								</div>
-
-								{/* Button container */}
-								<div className="flex justify-around items-center p-4 border-t border-gray-700">
-									{!isArchived(post.status) && post.slug?.current && (
-										<Button
-											onClick={(e) => {
-												e.stopPropagation();
-												handleEdit(post.slug);
-											}}
-											disabled={post.status === "pending"}
-											className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-										>
-											Edit
-										</Button>
-									)}
-									{isArchived(post.status) ? (
-										<>
-											<Button
-												onClick={(e) => {
-													e.stopPropagation();
-													handleUnarchive(post._id);
-												}}
-												className="bg-black text-white hover:bg-gray-700 px-4 py-2 rounded-md"
-											>
-												Unarchive
-											</Button>
-											<Button
-												onClick={(e) => {
-													e.stopPropagation();
-													handleDelete(post._id, post.mainImage?.asset?.url);
-												}}
-												className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md"
-											>
-												Delete
-											</Button>
-										</>
-									) : (
-										<>
-											<Button
-												onClick={(e) => {
-													e.stopPropagation();
-													handleArchive(post._id);
-												}}
-												disabled={post.status === "pending"}
-												className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-											>
-												Archive
-											</Button>
-											<Button
-												onClick={(e) => {
-													e.stopPropagation();
-													handleDelete(post._id, post.mainImage?.asset?.url);
-												}}
-												disabled={post.status === "pending"}
-												className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
-											>
-												Delete
-											</Button>
-										</>
-									)}
-								</div>
-
-								{/* Tags */}
-								<div className="p-4 pt-0">
-									<div className="flex flex-wrap gap-2">
-										{post.tags?.map((tag) => <Tag key={tag} text={tag} />)}
-									</div>
-								</div>
-							</div>
-						);
-					})
+					posts.map((post: Post) => (
+						<DashboardPostCard
+							key={post._id}
+							post={{
+								_id: post._id,
+								title: post.title,
+								slug: post.slug.current,
+								publishedAt: post.publishedAt,
+								mainImageUrl: post.mainImage?.asset?.url,
+								status: post.status,
+								tags: post.tags,
+							}}
+							onDelete={(id) => handleDelete(id, post.mainImage?.asset?.url)}
+							onArchive={handleArchive}
+							onUnarchive={handleUnarchive}
+						/>
+					))
 				) : (
-					<p className="text-center text-gray-400">
-						{noPostsMessages[filter]}
-					</p>
+					<p className="text-center text-gray-400">{noPostsMessages[filter]}</p>
 				)}
 			</div>
 		</div>
