@@ -189,20 +189,20 @@ const Navbar: React.FC = () => {
 		"bg-zinc-900/95 border border-zinc-800 backdrop-blur-sm";
 
 	const commandItemStyle = `
-		text-zinc-300 
-		hover:bg-zinc-800/50 
-		hover:text-zinc-100 
-		transition-colors 
-		duration-200 
-		rounded-md
-	`;
+    text-zinc-300 
+    hover:bg-zinc-800/50 
+    hover:text-zinc-100 
+    transition-colors 
+    duration-200 
+    rounded-md
+  `;
 
 	return (
 		<>
 			<FloatingDock
 				items={items}
 				desktopClassName={`fixed bottom-4 left-1/2 transform -translate-x-1/2 p-1 rounded-full shadow-lg transition-all duration-300 ease-in-out ${navbarClasses}`}
-				mobileClassName={`fixed bottom-4 right-4 p-1 rounded-full shadow-lg transition-all duration-300 ease-in-out ${navbarClasses}`}
+				mobileClassName="" // **Remove** styles that add background, padding, etc.
 				itemClassName="text-zinc-400 hover:text-zinc-100 transition-colors duration-200"
 			/>
 			<CommandDialog open={isCommandOpen} onOpenChange={setIsCommandOpen}>
