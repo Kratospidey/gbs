@@ -48,7 +48,9 @@ export default async function SavedPostsPage() {
 			<div className="flex items-center justify-center min-h-screen bg-gray-50">
 				<div className="text-center p-6 bg-white rounded shadow-md">
 					<h2 className="text-2xl font-semibold mb-4">No saved posts found</h2>
-					<p className="text-gray-600">You haven't saved any posts yet.</p>
+					<p className="text-gray-600">
+						You haven&apos;t saved any posts yet.
+					</p>{" "}
 				</div>
 			</div>
 		);
