@@ -112,9 +112,6 @@ const UserProfilePage = () => {
     return (
         <div className="min-h-screen">
             <ToastContainer />
-            <div className="absolute top-4 right-4">
-                <ModeToggle />
-            </div>
             <div className="container max-w-4xl mx-auto px-4 py-12">
                 <div className="flex items-center space-x-6 mb-8">
                     <Avatar className="h-24 w-24">

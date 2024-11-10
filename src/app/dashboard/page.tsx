@@ -216,18 +216,19 @@ const DashboardPage: React.FC = () => {
 			</h1>
 
 			{/* Filter Buttons */}
-			<div className="flex justify-center gap-4 mb-8">
+			<div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-8 px-2">
 				{filterOptions.map(({ label, value }) => (
 					<Button
 						key={label}
 						onClick={() => setFilter(value)}
 						variant={filter === value ? "default" : "outline"}
 						className={`
-							px-4 py-2 
+							px-2 sm:px-4 py-2 
 							rounded-md 
 							transition-colors 
 							text-xs 
 							font-medium
+							whitespace-nowrap
 							${filter === value 
 								? "bg-zinc-800 text-zinc-100 hover:bg-zinc-700" 
 								: "bg-zinc-950/40 backdrop-blur-sm border border-zinc-800 text-zinc-300 hover:bg-zinc-900 hover:text-zinc-100"
