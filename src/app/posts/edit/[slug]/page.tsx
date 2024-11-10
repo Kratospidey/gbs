@@ -110,7 +110,7 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
           }
         } else {
           alert('Post not found.');
-          router.push('/posts');
+          router.push('/');
         }
       } catch (error) {
         console.error('Error details:', error);

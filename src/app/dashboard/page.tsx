@@ -122,7 +122,7 @@ const DashboardPage: React.FC = () => {
 	// Show loading state during auth check
 	if (!isLoaded || !user) {
 		return (
-			<div className="min-h-screen flex items-center justify-center dark:bg-gray-900">
+			<div className="min-h-screen flex items-center justify-center">
 				<div className="text-lg text-gray-600 dark:text-gray-300">
 					Loading...
 				</div>
