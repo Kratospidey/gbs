@@ -79,7 +79,7 @@ const HomePage: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+        <div className="min-h-screen">
             <div className="max-w-7xl mx-auto p-6">
                 <h1 className="text-4xl font-bold mb-6 text-gray-800 dark:text-white">
                     All Published Posts

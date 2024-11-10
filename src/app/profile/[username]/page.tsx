@@ -110,7 +110,7 @@ const UserProfilePage = () => {
         );
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen">
             <ToastContainer />
             <div className="absolute top-4 right-4">
                 <ModeToggle />

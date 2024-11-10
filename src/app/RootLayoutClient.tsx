@@ -45,14 +45,25 @@ export default function RootLayoutClient({ children }: RootLayoutClientProps) {
 				enableSystem
 				disableTransitionOnChange
 			>
-				<SignedOut>
-					{/* Render the SignInButton component */}
-					<SignInButton />
-				</SignedOut>
-				<SignedIn>
-					<UserButton />
-				</SignedIn>
-				{children}
+				{/* Background wrapper */}
+				<div className="relative min-h-screen">
+					{/* Grid background with mask */}
+					<div className="fixed inset-0 dark:bg-black bg-white dark:bg-grid-white/[0.2] bg-grid-black/[0.2]">
+						{/* Radial gradient mask */}
+						<div className="absolute inset-0 bg-white dark:bg-black [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
+					</div>
+
+					{/* Content */}
+					<div className="relative">
+						<SignedOut>
+							<SignInButton />
+						</SignedOut>
+						<SignedIn>
+							<UserButton />
+						</SignedIn>
+						{children}
+					</div>
+				</div>
 			</ThemeProvider>
 		</ClerkProvider>
 	);
