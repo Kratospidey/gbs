@@ -22,7 +22,7 @@ export default function RootLayout({
 				<RootLayoutClient>
 					<Navbar />
 					<div id="dropdown-root"></div> {/* Add this div for the dropdown */}
-					<div className="pt-16">
+					<div>
 						{/* Your main content */}
 						{children}
 					</div>
