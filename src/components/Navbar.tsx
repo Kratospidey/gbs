@@ -148,16 +148,16 @@ const Navbar: React.FC = () => {
 					},
 				]),
 		// Theme Toggle Item
-		{
-			title: "Toggle Theme",
-			icon:
-				currentTheme === "dark" ? (
-					<IconSun className="h-6 w-6" />
-				) : (
-					<IconMoon className="h-6 w-6" />
-				),
-			onClick: toggleTheme,
-		},
+		// {
+		// 	title: "Toggle Theme",
+		// 	icon:
+		// 		currentTheme === "dark" ? (
+		// 			<IconSun className="h-6 w-6" />
+		// 		) : (
+		// 			<IconMoon className="h-6 w-6" />
+		// 		),
+		// 	onClick: toggleTheme,
+		// },
 	];
 
 	// Fetch posts when the command dialog opens

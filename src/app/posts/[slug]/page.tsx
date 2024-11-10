@@ -188,7 +188,7 @@ const PostDetailPage = () => {
 								_key: nanoid(),
 								post: {
 									_type: "reference",
-										_ref: post._id,
+									_ref: post._id,
 								},
 								savedAt: new Date().toISOString(),
 							},
@@ -233,24 +233,63 @@ const PostDetailPage = () => {
 		}, 2000);
 	};
 
-	if (isLoading)
+	const FloatingButtons: React.FC = () => (
+		<div
+			className={`
+        fixed bottom-8 flex flex-col space-y-2 z-50
+        left-4 sm:left-8 md:left-auto md:right-8
+      `}
+		>
+			<Button
+				onClick={scrollToTop}
+				variant="outline"
+				size="icon"
+				className="p-2 rounded-full bg-white/80 dark:bg-zinc-900/80 border-zinc-200 dark:border-zinc-800 shadow-lg backdrop-blur-sm hover:scale-110 transition-all"
+			>
+				<ArrowUp className="h-5 w-5" />
+			</Button>
+			<Button
+				onClick={addToList}
+				variant="outline"
+				size="icon"
+				className={`p-2 rounded-full bg-white/80 dark:bg-zinc-900/80 border-zinc-200 dark:border-zinc-800 shadow-lg backdrop-blur-sm hover:scale-110 transition-all ${
+					isSaved
+						? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900"
+						: ""
+				}`}
+			>
+				<FaBookmark className={`h-5 w-5 ${isSaved ? "fill-current" : ""}`} />
+			</Button>
+			<Button
+				onClick={sharePost}
+				variant="outline"
+				size="icon"
+				className="p-2 rounded-full bg-white/80 dark:bg-zinc-900/80 border-zinc-200 dark:border-zinc-800 shadow-lg backdrop-blur-sm hover:scale-110 transition-all"
+			>
+				{isShared ? (
+					<Check className="h-5 w-5 text-green-500" />
+				) : (
+					<Share2 className="h-5 w-5" />
+				)}
+			</Button>
+		</div>
+	);
+
+	if (isLoading) {
 		return (
-			<div className="min-h-screen flex items-center justify-center">
-				Loading...
+			<div className="flex items-center justify-center min-h-screen">
+				<div className="text-zinc-600 dark:text-zinc-400">Loading...</div>
 			</div>
 		);
-	if (!post)
+	}
+
+	if (!post) {
 		return (
-			<div className="min-h-screen flex items-center justify-center">
-				Post not found
+			<div className="flex items-center justify-center min-h-screen">
+				<div className="text-zinc-600 dark:text-zinc-400">Post not found</div>
 			</div>
 		);
-	if (post.status !== "published")
-		return (
-			<div className="min-h-screen flex items-center justify-center">
-				Post not published
-			</div>
-		);
+	}
 
 	const Content = (
 		<>
@@ -267,7 +306,8 @@ const PostDetailPage = () => {
 					<div className="absolute inset-0 bg-black/50" />
 				</div>
 				<div className="absolute bottom-8 w-full flex justify-center px-4">
-					<TextGenerateEffect words={post.title} filter={true} /> {/* Positioned near bottom */}
+					<TextGenerateEffect words={post.title} filter={true} />{" "}
+					{/* Positioned near bottom */}
 				</div>
 			</div>
 
@@ -375,43 +415,7 @@ const PostDetailPage = () => {
 					</section>
 				</div>
 			</div>
-			<>
-				{/* Right Side Navigation */}
-				<div className="fixed right-8 bottom-8 flex flex-col space-y-2 z-50">
-					<Button
-						onClick={scrollToTop}
-						variant="secondary"
-						size="icon"
-						className="p-2 rounded-full shadow-lg backdrop-blur-sm hover:scale-110 transition-transform"
-					>
-						<ArrowUp className="h-5 w-5" />
-					</Button>
-					<Button
-						onClick={addToList}
-						variant="secondary"
-						size="icon"
-						className={`p-2 rounded-full shadow-lg backdrop-blur-sm hover:scale-110 transition-transform ${
-							isSaved ? "bg-primary text-primary-foreground" : ""
-						}`}
-					>
-						<FaBookmark
-							className={`h-5 w-5 ${isSaved ? "fill-current" : ""}`}
-						/>
-					</Button>
-					<Button
-						onClick={sharePost}
-						variant="secondary"
-						size="icon"
-						className="p-2 rounded-full shadow-lg backdrop-blur-sm hover:scale-110 transition-transform"
-					>
-						{isShared ? (
-							<Check className="h-5 w-5 text-green-500" />
-						) : (
-							<Share2 className="h-5 w-5" />
-						)}
-					</Button>
-				</div>
-			</>
+			<FloatingButtons />
 		</>
 	);
 
@@ -513,14 +517,15 @@ const PostDetailPage = () => {
 					</div>
 
 					<div className="flex flex-wrap gap-2 mt-8">
-						{post.tags?.map((tag) => (
-							<Tag key={tag} text={tag} />
-						))}
+						{post.tags?.map((tag) => <Tag key={tag} text={tag} />)}
 					</div>
 
 					{/* Comments Section */}
 					<div className="mt-12 pt-8 border-t border-zinc-200 dark:border-zinc-800">
-						<section id="comments" className="prose dark:prose-invert prose-zinc">
+						<section
+							id="comments"
+							className="prose dark:prose-invert prose-zinc"
+						>
 							<h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100">
 								Comments
 							</h2>
@@ -543,42 +548,7 @@ const PostDetailPage = () => {
 				</div>
 
 				{/* Floating Action Buttons */}
-				<div className="fixed right-8 bottom-8 flex flex-col space-y-2 z-50">
-					<Button
-						onClick={scrollToTop}
-						variant="outline"
-						size="icon"
-						className="p-2 rounded-full bg-white/80 dark:bg-zinc-900/80 border-zinc-200 dark:border-zinc-800 shadow-lg backdrop-blur-sm hover:scale-110 transition-all"
-					>
-						<ArrowUp className="h-5 w-5" />
-					</Button>
-					<Button
-						onClick={addToList}
-						variant="outline"
-						size="icon"
-						className={`p-2 rounded-full bg-white/80 dark:bg-zinc-900/80 border-zinc-200 dark:border-zinc-800 shadow-lg backdrop-blur-sm hover:scale-110 transition-all ${
-							isSaved
-								? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900"
-								: ""
-						}`}
-					>
-						<FaBookmark
-							className={`h-5 w-5 ${isSaved ? "fill-current" : ""}`}
-						/>
-					</Button>
-					<Button
-						onClick={sharePost}
-						variant="outline"
-						size="icon"
-						className="p-2 rounded-full bg-white/80 dark:bg-zinc-900/80 border-zinc-200 dark:border-zinc-800 shadow-lg backdrop-blur-sm hover:scale-110 transition-all"
-					>
-						{isShared ? (
-							<Check className="h-5 w-5 text-green-500" />
-						) : (
-							<Share2 className="h-5 w-5" />
-						)}
-					</Button>
-				</div>
+				<FloatingButtons />
 			</>
 		</TracingBeam>
 	) : (
