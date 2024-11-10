@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import { Tag } from "@/components/Tag";
 import Image from "next/image";
+import { LinkPreview } from "@/components/ui/link-preview";
 
 // Update UserProfile interface to match Supabase columns
 interface UserProfile {
@@ -136,37 +137,25 @@ const UserProfilePage = () => {
 						<div className="flex gap-3">
 							{user.github && (
 								<Button variant="outline" size="icon" asChild>
-									<a
-										href={user.github}
-										target="_blank"
-										rel="noopener noreferrer"
-									>
+									<LinkPreview url={user.github}>
 										<FaGithub className="h-5 w-5" />
-									</a>
+									</LinkPreview>
 								</Button>
 							)}
 
 							{user.linkedin && (
 								<Button variant="outline" size="icon" asChild>
-									<a
-										href={user.linkedin}
-										target="_blank"
-										rel="noopener noreferrer"
-									>
+									<LinkPreview url={user.linkedin}>
 										<FaLinkedin className="h-5 w-5" />
-									</a>
+									</LinkPreview>
 								</Button>
 							)}
 
 							{user.custom_link && (
 								<Button variant="outline" size="icon" asChild>
-									<a
-										href={user.custom_link}
-										target="_blank"
-										rel="noopener noreferrer"
-									>
+									<LinkPreview url={user.custom_link}>
 										<FaGlobe className="h-5 w-5" />
-									</a>
+									</LinkPreview>
 								</Button>
 							)}
 

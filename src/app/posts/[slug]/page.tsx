@@ -18,7 +18,8 @@ import { nanoid } from "nanoid";
 import Image from "next/image";
 import Giscus from "@giscus/react";
 import { TracingBeam } from "@/components/ui/tracing-beam";
-import { useIsDesktop } from "@/hooks/useIsDesktop"; // Import the custom hook
+import { useIsDesktop } from "@/hooks/useIsDesktop";
+import { TextGenerateEffect } from "@/components/ui/text-generate-effect"; // Import the component
 
 interface Post {
 	_id: string;
@@ -187,7 +188,7 @@ const PostDetailPage = () => {
 								_key: nanoid(),
 								post: {
 									_type: "reference",
-									_ref: post._id,
+										_ref: post._id,
 								},
 								savedAt: new Date().toISOString(),
 							},
@@ -265,10 +266,8 @@ const PostDetailPage = () => {
 					/>
 					<div className="absolute inset-0 bg-black/50" />
 				</div>
-				<div className="relative h-full flex items-center justify-center">
-					<h1 className="text-4xl md:text-6xl font-bold text-white text-center px-4">
-						{post.title}
-					</h1>
+				<div className="absolute bottom-8 w-full flex justify-center px-4">
+					<TextGenerateEffect words={post.title} filter={true} /> {/* Positioned near bottom */}
 				</div>
 			</div>
 
