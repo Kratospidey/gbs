@@ -87,14 +87,12 @@ const FloatingDockMobile = ({
   };
 
   return (
-    <div
-      className={cn("fixed bottom-4 right-4 z-50 flex md:hidden", className)}
-    >
+    <div className={cn("fixed bottom-4 right-4 z-50 flex md:hidden", className)}>
       <AnimatePresence>
         {open && (
           <motion.div
             key="mobile-nav"
-            className="absolute bottom-full mb-2 flex flex-col gap-2 bg-background rounded-lg p-2 shadow-lg"
+            className="absolute bottom-full mb-2 flex flex-col gap-1 bg-background rounded-lg p-2 shadow-lg"
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
@@ -104,6 +102,7 @@ const FloatingDockMobile = ({
                 key={item.title}
                 item={item}
                 onClick={() => handleItemClick(item)}
+                title={item.title} // Added title for tooltips in mobile
               />
             ))}
           </motion.div>
@@ -176,7 +175,7 @@ function IconContainer({
         <AnimatePresence>
           {submenuOpen && (
             <motion.div
-              className="absolute flex flex-col items-center bg-background rounded-lg p-1 shadow-lg"
+              className="absolute flex flex-col items-center gap-1 bg-background rounded-lg p-2 shadow-lg scale-90" // Further reduced scale to 90%
               style={{ bottom: "110%", marginBottom: "6px" }}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -187,12 +186,11 @@ function IconContainer({
                   <DockButton
                     key={subItem.title}
                     item={subItem}
-                    className="mb-1 last:mb-0"
+                    className="last:mb-0"
+                    title={subItem.title} // Title for browser tooltip
                   />
                 ))}
-              {item.customComponent && (
-                <div className="mb-1 last:mb-0">{item.customComponent}</div>
-              )}
+              {item.customComponent && <div>{item.customComponent}</div>}
             </motion.div>
           )}
         </AnimatePresence>
@@ -206,18 +204,24 @@ const DockButton = ({
   style,
   className,
   onClick,
+  title, // Added title prop
 }: {
   item: DockItem;
   style?: React.CSSProperties;
   className?: string;
   onClick?: () => void;
+  title?: string; // Define title as optional
 }) => {
   const baseClasses =
     "aspect-square rounded-full flex items-center justify-center transition-transform duration-200 hover:scale-110";
 
   if (item.customComponent) {
     return (
-      <div className={cn(baseClasses, className)} style={style}>
+      <div
+        className={cn(baseClasses, className)}
+        style={style}
+        title={title} // Apply title for tooltip
+      >
         {item.customComponent}
       </div>
     );
@@ -228,7 +232,11 @@ const DockButton = ({
   if (item.href) {
     return (
       <Link href={item.href}>
-        <div className={cn(baseClasses, className)} style={style}>
+        <div
+          className={cn(baseClasses, className)}
+          style={style}
+          title={title} // Apply title for tooltip
+        >
           {content}
         </div>
       </Link>
@@ -239,13 +247,18 @@ const DockButton = ({
         onClick={onClick || item.onClick}
         className={cn(baseClasses, className)}
         style={style}
+        title={title} // Apply title for tooltip
       >
         {content}
       </button>
     );
   } else {
     return (
-      <div className={cn(baseClasses, className)} style={style}>
+      <div
+        className={cn(baseClasses, className)}
+        style={style}
+        title={title} // Apply title for tooltip
+      >
         {content}
       </div>
     );
