@@ -1,4 +1,4 @@
-// components/Navbar.tsx
+// src/components/Navbar.tsx
 "use client";
 
 import { FloatingDock } from "@/components/ui/floating-dock";

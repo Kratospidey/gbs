@@ -16,6 +16,7 @@ import {
 } from "framer-motion";
 import Link from "next/link";
 import { useRef, useState } from "react";
+import { ModeToggle } from "@/components/mode-toggle"; // Ensure ModeToggle is imported if needed
 
 type DockItem = {
 	title: string;
@@ -93,7 +94,7 @@ const FloatingDockMobile = ({
 				{open && (
 					<motion.div
 						key="mobile-nav"
-						className="absolute bottom-full mb-2 flex flex-col gap-2"
+						className="absolute bottom-full mb-2 flex flex-col gap-2 bg-background rounded-lg p-2 shadow-lg"
 						initial={{ opacity: 0, y: 10 }}
 						animate={{ opacity: 1, y: 0 }}
 						exit={{ opacity: 0, y: 10 }}
@@ -110,7 +111,8 @@ const FloatingDockMobile = ({
 			</AnimatePresence>
 			<button
 				onClick={() => setOpen((prev) => !prev)}
-				className="h-10 w-10 rounded-full bg-background text-foreground flex items-center justify-center shadow-lg"
+				className="h-10 w-10 rounded-full bg-background text-foreground flex items-center justify-center shadow-lg transition-transform duration-200 hover:scale-110"
+				title="Toggle Navigation"
 			>
 				<IconLayoutNavbarCollapse className="h-5 w-5" />
 			</button>
@@ -174,13 +176,18 @@ function IconContainer({
 				<AnimatePresence>
 					{submenuOpen && (
 						<motion.div
-							className="absolute bottom-full mb-2 flex flex-col items-center"
-							initial={{ opacity: 0, y: 10 }}
+							className="absolute flex flex-col items-center bg-background rounded-lg p-2 shadow-lg"
+							style={{ bottom: "110%", marginBottom: "10px" }}
+							initial={{ opacity: 0, y: -10 }}
 							animate={{ opacity: 1, y: 0 }}
-							exit={{ opacity: 0, y: 10 }}
+							exit={{ opacity: 0, y: -10 }}
 						>
 							{item.submenu.map((subItem) => (
-								<DockButton key={subItem.title} item={subItem} className="mt-2" />
+								<DockButton
+									key={subItem.title}
+									item={subItem}
+									className="mb-2 last:mb-0"
+								/>
 							))}
 						</motion.div>
 					)}

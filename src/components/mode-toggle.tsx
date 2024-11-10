@@ -18,9 +18,9 @@ export function ModeToggle() {
 	const otherThemes = ["light", "dark", "system"].filter((t) => t !== theme);
 
 	const themeIcons: Record<string, JSX.Element> = {
-		light: <SunIcon className="h-6 w-6" />,
-		dark: <MoonIcon className="h-6 w-6" />,
-		system: <DesktopIcon className="h-6 w-6" />,
+		light: <SunIcon className="h-5 w-5" />,
+		dark: <MoonIcon className="h-5 w-5" />,
+		system: <DesktopIcon className="h-5 w-5" />,
 	};
 
 	const handleMouseEnter = () => setIsHovering(true);
@@ -34,7 +34,7 @@ export function ModeToggle() {
 		>
 			{/* Current Theme Button */}
 			<button
-				className="p-2 h-10 w-10 bg-background text-foreground rounded-full flex items-center justify-center shadow-lg"
+				className="p-2 h-10 w-10 bg-background text-foreground rounded-full flex items-center justify-center shadow-lg transition-transform duration-200 hover:scale-110"
 				title={`Current theme: ${currentTheme}`}
 			>
 				{themeIcons[currentTheme]}
@@ -45,7 +45,7 @@ export function ModeToggle() {
 			<AnimatePresence>
 				{isHovering && (
 					<motion.div
-						className="absolute flex flex-col items-center"
+						className="absolute flex flex-col items-center bg-background rounded-lg p-2 shadow-lg"
 						style={{ bottom: "110%", marginBottom: "10px" }}
 						initial={{ opacity: 0, y: -10 }}
 						animate={{ opacity: 1, y: 0 }}
@@ -55,7 +55,7 @@ export function ModeToggle() {
 							<button
 								key={t}
 								onClick={() => setTheme(t)}
-								className="p-2 h-10 w-10 mb-2 bg-background text-foreground rounded-full flex items-center justify-center shadow-lg"
+								className="p-2 h-8 w-8 bg-transparent text-foreground rounded-full flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors mb-2 last:mb-0"
 								title={`Switch to ${t} theme`}
 							>
 								{themeIcons[t]}
