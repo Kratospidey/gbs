@@ -183,7 +183,8 @@ const Navbar: React.FC = () => {
 	);
 
 	const navbarClasses =
-		"bg-zinc-900/80 backdrop-blur-md border border-zinc-800";
+		"bg-zinc-900/80 backdrop-blur-md border border-zinc-800 px-6 py-3"; // Increased padding
+
 	const commandDialogClasses =
 		"bg-zinc-900/95 border border-zinc-800 backdrop-blur-sm";
 
