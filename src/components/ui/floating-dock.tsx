@@ -158,7 +158,7 @@ const FloatingDockMobile = ({
 				{open && (
 					<motion.div
 						key="mobile-nav"
-						className="absolute bottom-full mb-2 flex flex-col gap-1 bg-zinc-900/95 dark:bg-zinc-950/95 rounded-lg p-1 shadow-lg border border-zinc-800 backdrop-blur-sm min-w-[120px]"
+						className="absolute bottom-full mb-2 flex flex-col gap-1 bg-zinc-900/95 dark:bg-zinc-950/95 rounded-lg p-1 shadow-lg border border-zinc-800 backdrop-blur-sm min-w-[100px]"
 						initial={{ opacity: 0, y: -10 }}
 						animate={{ opacity: 1, y: 0 }}
 						exit={{ opacity: 0, y: -10 }}
@@ -242,25 +242,22 @@ function IconContainer({
 				<AnimatePresence>
 					{submenuOpen && (
 						<motion.div
-							className="absolute bottom-full mb-2 flex flex-col items-center gap-1 bg-zinc-900/95 dark:bg-zinc-950/95 rounded-lg p-1 shadow-lg border border-zinc-800 backdrop-blur-sm min-w-[120px]"
+							className="absolute bottom-full mb-1 flex flex-col items-center bg-zinc-900/95 dark:bg-zinc-950/95 rounded-md p-0 shadow-lg border border-zinc-800 backdrop-blur-sm"
 							initial={{ opacity: 0, y: 10 }}
 							animate={{ opacity: 1, y: 0 }}
 							exit={{ opacity: 0, y: 10 }}
 						>
-							{item.submenu &&
-								item.submenu.map((subItem) => (
-									<DockButton
-										key={subItem.title}
-										item={subItem}
-										className="text-zinc-400 hover:text-zinc-100 transition-colors duration-200 w-full px-2 py-1 rounded-md hover:bg-zinc-800/50 text-sm flex items-center gap-2"
-										title={subItem.title}
-									/>
-								))}
-							{item.customComponent && (
-								<div className="w-full">{item.customComponent}</div>
-							)}
+							{item.submenu?.map((subItem) => (
+								<DockButton
+									key={subItem.title}
+									item={subItem}
+									className="flex items-center justify-center text-zinc-400 hover:text-zinc-100 transition-colors duration-200 px-1 py-0 rounded hover:bg-zinc-800/50 text-xs whitespace-nowrap"
+									title={subItem.title}
+								/>
+							))}
+							{item.customComponent && <div>{item.customComponent}</div>}
 							{/* Arrow indicator */}
-							<div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-3 h-3 rotate-45 bg-zinc-900/95 dark:bg-zinc-950/95 border-t border-l border-zinc-800" />
+							<div className="absolute bottom-[-3px] left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 rotate-45 bg-zinc-900/95 dark:bg-zinc-950/95 border-t border-l border-zinc-800" />
 						</motion.div>
 					)}
 				</AnimatePresence>
