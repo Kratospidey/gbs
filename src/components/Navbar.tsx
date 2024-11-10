@@ -113,7 +113,7 @@ const Navbar: React.FC = () => {
 						submenu: [
 							{
 								title: "View Profile",
-								href: `/profile/${user?.id}`,
+								href: `/profile/${user?.username}`,
 								icon: <IconEye className="h-5 w-5" />,
 							},
 							{
