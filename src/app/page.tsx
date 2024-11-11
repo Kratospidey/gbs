@@ -95,7 +95,7 @@ const HomePage: React.FC = () => {
 				</h1>
 
 				{/* Sorting and Filtering Options */}
-				<div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 space-y-4 md:space-y-0 md:space-x-4">
+				<div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-0.5 space-y-4 md:space-y-0 md:space-x-4">
 					{/* Sort By Date */}
 					<div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
 						<label
@@ -170,7 +170,7 @@ const HomePage: React.FC = () => {
 
 				{/* Posts List */}
 				{!isLoading && !error && (
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0.1 md:gap-2 lg:gap-3">
 						{posts.map((post) => (
 							<ThreeDPostCard key={post._id} post={post} />
 						))}
