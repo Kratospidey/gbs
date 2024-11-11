@@ -81,26 +81,40 @@ const PostDetailPage = () => {
 			try {
 				const data = await client.fetch(
 					`
-          *[_type == "post" && slug.current == $slug][0]{
-            _id,
-            title,
-            status, // Added status
-            body,
-            publishedAt,
-            mainImage{
-              asset->{url}
-            },
-            "author": {
-              "name": author->name,
-              "clerk_id": author->_id, // Use _id since we're storing clerk_id there
-              "profile_picture": author->profile_picture,
-            },
-            tags,
-            "estimatedReadingTime": round(length(body) / 5 / 180 )
-          }
-        `,
+            *[_type == "post" && slug.current == $slug][0]{
+              _id,
+              title,
+              status, // Added status
+              body,
+              publishedAt,
+              mainImage{
+                asset->{url}
+              },
+              "author": {
+                "name": author->name,
+                "clerk_id": author->_id, // Use _id since we're storing clerk_id there
+                "profile_picture": author->profile_picture,
+              },
+              tags,
+              "estimatedReadingTime": round(length(body) / 5 / 180 )
+            }
+          `,
 					{ slug }
 				);
+
+				// Check if the post exists
+				if (!data) {
+					toast.error("Post not found");
+					router.push("/");
+					return;
+				}
+
+				// Check if the post status is published
+				if (data.status !== "published") {
+					toast.error("This post is not available.");
+					router.push("/");
+					return;
+				}
 
 				// Fetch author profile from Supabase
 				if (data?.author?.clerk_id) {
@@ -109,6 +123,11 @@ const PostDetailPage = () => {
 						.select("profile_picture, user_id")
 						.eq("user_id", data.author.clerk_id)
 						.single();
+
+					if (error) {
+						console.error("Error fetching author profile:", error);
+						// Optionally, you can decide to redirect or handle the error differently
+					}
 
 					if (profileData?.profile_picture) {
 						data.author = {
@@ -133,6 +152,8 @@ const PostDetailPage = () => {
 				}
 			} catch (error) {
 				console.error("Error fetching post:", error);
+				toast.error("An error occurred while fetching the post.");
+				router.push("/");
 			}
 			setIsLoading(false);
 		};
@@ -140,7 +161,7 @@ const PostDetailPage = () => {
 		if (slug) {
 			fetchPostAndSaveStatus();
 		}
-	}, [slug, user?.id, isSaved, user]);
+	}, [slug, user?.id, isSaved, user, router]);
 
 	const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
