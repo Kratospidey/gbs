@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { toast, ToastContainer } from "react-toastify";
+import { toast } from "react-hot-toast"; // Replaced Toastify with React Hot Toast
 import { syncUserProfile } from "@/lib/syncUserProfile";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
@@ -36,7 +36,6 @@ interface Profile {
 	customUrl: string;
 }
 
-// Updated Zod schema to preprocess empty strings
 const urlSchema = z.preprocess((arg) => {
 	if (typeof arg === "string" && arg.trim() === "") {
 		return undefined;
@@ -58,9 +57,10 @@ const ProfilePage: React.FC = () => {
 		linkedinUrl: "",
 		customUrl: "",
 	});
+	const [selectedFile, setSelectedFile] = useState<File | null>(null);
+	const [previewUrl, setPreviewUrl] = useState<string | null>(null); // Preview URL state
 	const [isLoading, setIsLoading] = useState(false);
 	const [isChanged, setIsChanged] = useState(false);
-	const [originalProfile, setOriginalProfile] = useState<Profile | null>(null);
 
 	// Load profile data
 	useEffect(() => {
@@ -69,17 +69,17 @@ const ProfilePage: React.FC = () => {
 
 			try {
 				const { data, error } = await supabase
-					.from("user_profiles") // Changed from profiles to user_profiles
+					.from("user_profiles")
 					.select(
 						`
-            first_name,
-            last_name, 
-            bio,
-            profile_picture,
-            github,
-            linkedin,
-            custom_link
-          `
+                            first_name,
+                            last_name, 
+                            bio,
+                            profile_picture,
+                            github,
+                            linkedin,
+                            custom_link
+                        `
 					)
 					.eq("user_id", user.id)
 					.single();
@@ -87,17 +87,7 @@ const ProfilePage: React.FC = () => {
 				if (error) throw error;
 
 				if (data) {
-					// Map DB columns to Profile interface
 					setProfile({
-						firstName: data.first_name || "",
-						lastName: data.last_name || "",
-						bio: data.bio || "",
-						profilePicture: data.profile_picture || null,
-						githubUrl: data.github || "",
-						linkedinUrl: data.linkedin || "",
-						customUrl: data.custom_link || "",
-					});
-					setOriginalProfile({
 						firstName: data.first_name || "",
 						lastName: data.last_name || "",
 						bio: data.bio || "",
@@ -116,37 +106,16 @@ const ProfilePage: React.FC = () => {
 		loadProfile();
 	}, [user?.id]);
 
-	// Handle profile picture change
-	const handleProfilePicChange = async (
-		e: React.ChangeEvent<HTMLInputElement>
-	) => {
-		if (!e.target.files?.[0]) return;
+	// Handle file selection
+	const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+		if (e.target.files?.[0]) {
+			const file = e.target.files[0];
+			setSelectedFile(file);
+			setIsChanged(true);
 
-		const file = e.target.files[0];
-		setIsLoading(true);
-
-		try {
-			const { data, error } = await supabase.storage
-				.from("profile-pictures")
-				.upload(`${user?.id}/${file.name}`, file, {
-					upsert: true, // Overwrite if file exists
-				});
-
-			if (error) throw error;
-
-			const publicUrlResponse = supabase.storage
-				.from("profile-pictures")
-				.getPublicUrl(data.path);
-
-			const url = publicUrlResponse.data.publicUrl;
-
-			handleInputChange("profilePicture", url);
-			toast.success("Profile picture updated successfully!");
-		} catch (error: any) {
-			toast.error("Error uploading image");
-			console.error("Image Upload Error:", error);
-		} finally {
-			setIsLoading(false);
+			// Generate a preview URL
+			const url = URL.createObjectURL(file);
+			setPreviewUrl(url);
 		}
 	};
 
@@ -169,8 +138,6 @@ const ProfilePage: React.FC = () => {
 		setIsLoading(true);
 
 		try {
-			console.log("Starting profile update...");
-
 			// Validate URLs
 			const urlValidation = {
 				githubUrl: urlSchema.safeParse(profile.githubUrl),
@@ -178,22 +145,43 @@ const ProfilePage: React.FC = () => {
 				customUrl: urlSchema.safeParse(profile.customUrl),
 			};
 
-			console.log(
-				"URL Validation Results:",
-				JSON.stringify(urlValidation, null, 2)
-			);
-
 			const hasUrlErrors = Object.values(urlValidation).some(
 				(result) => !result.success
 			);
 
 			if (hasUrlErrors) {
 				toast.error("Please enter valid URLs");
-				console.error("URL validation failed.");
 				return;
 			}
 
-			// Sanitize profile data: Remove 'updated_at'
+			// If a file is selected, upload it
+			if (selectedFile) {
+				const uploadPath = `public/${user.id}/${selectedFile.name}`; // Keep the upload path as requested
+				console.log("Uploading to user_pfp bucket, path:", uploadPath);
+
+				const { data, error } = await supabase.storage
+					.from("user_pfp")
+					.upload(uploadPath, selectedFile, {
+						upsert: true,
+					});
+
+				if (error) throw error;
+
+				const { data: publicUrlData } = supabase.storage
+					.from("user_pfp")
+					.getPublicUrl(uploadPath);
+
+				const url = publicUrlData.publicUrl;
+
+				if (url) {
+					profile.profilePicture = url;
+					toast.success("Profile picture updated successfully!");
+				} else {
+					toast.error("Failed to retrieve public URL.");
+				}
+			}
+
+			// Sanitize profile data
 			const sanitizedProfile = {
 				first_name: profile.firstName || null,
 				last_name: profile.lastName || null,
@@ -204,43 +192,38 @@ const ProfilePage: React.FC = () => {
 				custom_link: profile.customUrl || null,
 			};
 
-			console.log("Sanitized Profile Data:", sanitizedProfile);
-
-			// Update profile in Supabase using 'update' with 'eq' filter
+			// Update profile in Supabase
 			const { error } = await supabase
 				.from("user_profiles")
 				.update(sanitizedProfile)
-				.eq("user_id", user.id); // Ensure we're updating the correct user
+				.eq("user_id", user.id);
 
 			if (error) {
 				console.error("Supabase update error:", error);
 				throw error;
 			}
 
-			console.log("Supabase profile updated successfully.");
-
-			// Optionally sync with another service if necessary
+			// Sync with external service
 			const syncSuccess = await syncUserProfile({
 				user_id: user.id,
 				first_name: profile.firstName,
 				last_name: profile.lastName,
 				bio: profile.bio,
-				profile_picture: profile.profilePicture || undefined, // Handle null
+				profile_picture: profile.profilePicture || undefined,
 				github: profile.githubUrl,
 				linkedin: profile.linkedinUrl,
 				custom_link: profile.customUrl,
 			});
 
 			if (!syncSuccess) {
-				toast.warn(
-					"Profile updated, but failed to sync with external service."
-				);
+				toast("Profile updated, but failed to sync with external service.");
 			} else {
 				toast.success("Profile updated successfully!");
 			}
 
-			setOriginalProfile(profile);
 			setIsChanged(false);
+			setSelectedFile(null);
+			setPreviewUrl(null);
 		} catch (error: any) {
 			toast.error(error.message || "Error updating profile");
 			console.error("Error updating profile:", error);
@@ -256,13 +239,22 @@ const ProfilePage: React.FC = () => {
 		}
 	}, [isLoaded, user, router]);
 
+	// Cleanup preview URL on unmount or when a new file is selected
+	useEffect(() => {
+		return () => {
+			if (previewUrl) {
+				URL.revokeObjectURL(previewUrl);
+			}
+		};
+	}, [previewUrl]);
+
 	if (!isLoaded || !user) {
 		return <div>Loading...</div>;
 	}
 
 	return (
 		<div className="container max-w-4xl mx-auto px-4 sm:px-6 py-6">
-			<ToastContainer />
+			{/* Place the Toaster component at the root of your app */}
 			<div className="flex flex-col space-y-2 mb-8">
 				<h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
 					Profile Settings
@@ -287,16 +279,22 @@ const ProfilePage: React.FC = () => {
 					{/* Profile Picture */}
 					<div className="flex flex-col items-center gap-4">
 						<Image
-							src={profile.profilePicture || "/default-avatar.png"}
+							src={
+								previewUrl || profile.profilePicture || "/default-avatar.png"
+							}
 							width={100}
 							height={100}
 							alt="Profile Picture"
 							className="rounded-full object-cover"
+							onError={(e) => {
+								(e.currentTarget as HTMLImageElement).src =
+									"/default-avatar.png";
+							}}
 						/>
 						<Input
 							type="file"
 							accept="image/*"
-							onChange={handleProfilePicChange}
+							onChange={handleFileSelect}
 							className="w-full max-w-xs h-10 border-zinc-200 dark:border-zinc-800"
 						/>
 					</div>
@@ -305,26 +303,6 @@ const ProfilePage: React.FC = () => {
 
 					{/* Basic Info */}
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-						<div className="space-y-2">
-							<Label htmlFor="username">Username</Label>
-							<Input
-								id="username"
-								value={user?.username || ""}
-								disabled
-								className="h-10 border-zinc-200 dark:border-zinc-800 bg-zinc-50/50"
-							/>
-						</div>
-
-						<div className="space-y-2">
-							<Label htmlFor="email">Email Address</Label>
-							<Input
-								id="email"
-								value={user?.emailAddresses[0]?.emailAddress || ""}
-								disabled
-								className="h-10 border-zinc-200 dark:border-zinc-800 bg-zinc-50/50"
-							/>
-						</div>
-
 						<div className="space-y-2">
 							<Label htmlFor="firstName">First Name</Label>
 							<Input

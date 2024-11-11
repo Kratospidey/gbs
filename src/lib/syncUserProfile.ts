@@ -15,19 +15,34 @@ interface UserProfileData {
 
 export async function syncUserProfile(data: UserProfileData): Promise<boolean> {
 	try {
-		const { error } = await supabase.from("user_profiles").upsert(
-			{
-				user_id: data.user_id,
-				first_name: data.first_name,
-				last_name: data.last_name,
-				bio: data.bio,
-				profile_picture: data.profile_picture,
-				github: data.github,
-				linkedin: data.linkedin,
-				custom_link: data.custom_link,
-			},
-			{ onConflict: "user_id" }
+		// Fetch existing profile to check if profile_picture is empty
+		const { data: existingProfile, error: fetchError } = await supabase
+			.from("user_profiles")
+			.select("profile_picture")
+			.eq("user_id", data.user_id)
+			.single();
+
+		if (fetchError) {
+			console.error("Error fetching existing profile:", fetchError);
+			return false;
+		}
+
+		// Prepare upsert data
+		const upsertData = { ...data };
+
+		// If existing profile_picture is not empty, exclude profile_picture from upsert
+		if (existingProfile?.profile_picture) {
+			delete upsertData.profile_picture;
+		}
+
+		// Remove undefined properties
+		const finalUpsertData = Object.fromEntries(
+			Object.entries(upsertData).filter(([_, v]) => v !== undefined)
 		);
+
+		const { error } = await supabase
+			.from("user_profiles")
+			.upsert(finalUpsertData, { onConflict: "user_id" });
 
 		if (error) {
 			console.error("Error updating profile:", error);
