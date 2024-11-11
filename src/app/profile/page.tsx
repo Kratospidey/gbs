@@ -1,5 +1,4 @@
 // app/profile/page.tsx
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -9,12 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import DarkModeToggle from "@/components/DarkModeToggle";
 import { toast } from "react-toastify";
 import { syncUserProfile } from "@/lib/syncUserProfile";
-import { z } from "zod"; // For validation
+import { z } from "zod";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { Separator } from "@/components/ui/separator";
+import { Icons } from "@/components/icons";
 
 import {
 	Card,
@@ -25,340 +25,350 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 
-// URL validation schema
-const urlSchema = z.string().url().or(z.literal(""));
-
-// Add type definition at the top of the file
-interface UserProfileData {
-	user_id: string;
-	first_name: string;
-	last_name: string;
+// Types and validation schemas
+interface Profile {
+	firstName: string;
+	lastName: string;
 	bio: string;
-	profile_picture?: string;
-	github?: string;
-	linkedin?: string;
-	custom_link?: string;
+	profilePicture: string | null;
+	githubUrl: string;
+	linkedinUrl: string;
+	customUrl: string;
 }
+
+const urlSchema = z.string().url().nullable().optional();
 
 const ProfilePage: React.FC = () => {
 	const { user, isLoaded } = useUser();
 	const router = useRouter();
 
-	// Move all useState declarations here, before any conditionals
-	const [profile, setProfile] = useState<any>({
+	// State declarations
+	const [profile, setProfile] = useState<Profile>({
 		firstName: "",
 		lastName: "",
 		bio: "",
-		profilePicture: "",
+		profilePicture: null,
 		githubUrl: "",
 		linkedinUrl: "",
 		customUrl: "",
 	});
 	const [isLoading, setIsLoading] = useState(false);
-	const [newProfilePic, setNewProfilePic] = useState<File | null>(null);
 	const [isChanged, setIsChanged] = useState(false);
-	const [originalProfile, setOriginalProfile] = useState<any>({
-		firstName: "",
-		lastName: "",
-		bio: "",
-		profilePicture: "",
-		githubUrl: "",
-		linkedinUrl: "",
-		customUrl: "",
-	});
+	const [originalProfile, setOriginalProfile] = useState<Profile | null>(null);
 
-	// Auth check effect
+	// Load profile data
+	useEffect(() => {
+		const loadProfile = async () => {
+			if (!user?.id) return;
+
+			try {
+				const { data, error } = await supabase
+					.from("user_profiles") // Changed from profiles to user_profiles
+					.select(
+						`
+          first_name,
+          last_name, 
+          bio,
+          profile_picture,
+          github,
+          linkedin,
+          custom_link
+        `
+					)
+					.eq("user_id", user.id)
+					.single();
+
+				if (error) throw error;
+
+				if (data) {
+					// Map DB columns to Profile interface
+					setProfile({
+						firstName: data.first_name || "",
+						lastName: data.last_name || "",
+						bio: data.bio || "",
+						profilePicture: data.profile_picture || null,
+						githubUrl: data.github || "",
+						linkedinUrl: data.linkedin || "",
+						customUrl: data.custom_link || "",
+					});
+					setOriginalProfile({
+						firstName: data.first_name || "",
+						lastName: data.last_name || "",
+						bio: data.bio || "",
+						profilePicture: data.profile_picture || null,
+						githubUrl: data.github || "",
+						linkedinUrl: data.linkedin || "",
+						customUrl: data.custom_link || "",
+					});
+				}
+			} catch (error) {
+				toast.error("Error loading profile");
+				console.error(error);
+			}
+		};
+
+		loadProfile();
+	}, [user?.id]);
+
+	// Handle profile picture change
+	const handleProfilePicChange = async (
+		e: React.ChangeEvent<HTMLInputElement>
+	) => {
+		if (!e.target.files?.[0]) return;
+
+		const file = e.target.files[0];
+		setIsLoading(true);
+
+		try {
+			const { data, error } = await supabase.storage
+				.from("profile-pictures")
+				.upload(`${user?.id}/${file.name}`, file);
+
+			if (error) throw error;
+
+			const url = supabase.storage
+				.from("profile-pictures")
+				.getPublicUrl(data.path).data.publicUrl;
+
+			handleInputChange("profilePicture", url);
+		} catch (error) {
+			toast.error("Error uploading image");
+			console.error(error);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	// Handle input changes
+	const handleInputChange = (field: keyof Profile, value: string) => {
+		setProfile((prev) => ({
+			...prev,
+			[field]: value,
+		}));
+		setIsChanged(true);
+	};
+
+	// Handle profile update
+	const handleUpdateProfile = async () => {
+		if (!user?.id) return;
+
+		setIsLoading(true);
+
+		try {
+			// Validate URLs
+			const urlValidation = {
+				githubUrl: urlSchema.safeParse(profile.githubUrl),
+				linkedinUrl: urlSchema.safeParse(profile.linkedinUrl),
+				customUrl: urlSchema.safeParse(profile.customUrl),
+			};
+
+			const hasUrlErrors = Object.values(urlValidation).some(
+				(result) => !result.success
+			);
+
+			if (hasUrlErrors) {
+				toast.error("Please enter valid URLs");
+				return;
+			}
+
+			const { error } = await supabase.from("user_profiles").upsert({
+				user_id: user.id,
+				first_name: profile.firstName,
+				last_name: profile.lastName,
+				bio: profile.bio,
+				profile_picture: profile.profilePicture,
+				github: profile.githubUrl,
+				linkedin: profile.linkedinUrl,
+				custom_link: profile.customUrl,
+				updated_at: new Date().toISOString(),
+			});
+
+			if (error) throw error;
+
+			await syncUserProfile({
+				user_id: user.id,
+				first_name: profile.firstName,
+				last_name: profile.lastName,
+				bio: profile.bio,
+				profile_picture: profile.profilePicture || undefined, // Fix null type
+				github: profile.githubUrl,
+				linkedin: profile.linkedinUrl,
+				custom_link: profile.customUrl,
+			});
+			toast.success("Profile updated successfully");
+			setOriginalProfile(profile);
+			setIsChanged(false);
+		} catch (error) {
+			toast.error("Error updating profile");
+			console.error(error);
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	// Auth check
 	useEffect(() => {
 		if (isLoaded && !user) {
 			router.push("/signin");
 		}
 	}, [isLoaded, user, router]);
 
-	// Profile fetch effect
-	useEffect(() => {
-		const fetchUserProfile = async () => {
-			if (user?.id) {
-				let { data, error } = await supabase
-					.from("user_profiles")
-					.select("*")
-					.eq("user_id", user.id)
-					.single();
-
-				if (error) {
-					// Initialize profile if it doesn't exist
-					await syncUserProfile({
-						user_id: user.id,
-						first_name: user.firstName || "",
-						last_name: user.lastName || "",
-						bio: "",
-						profile_picture: "/default-avatar.png",
-						github: "",
-						linkedin: "",
-						custom_link: "",
-					});
-
-					// Fetch again after initialization
-					const { data: newData } = await supabase
-						.from("user_profiles")
-						.select("*")
-						.eq("user_id", user.id)
-						.single();
-
-					if (newData) data = newData;
-				}
-
-				if (data) {
-					const initialProfile = {
-						firstName: data.first_name || "",
-						lastName: data.last_name || "",
-						bio: data.bio || "",
-						profilePicture: data.profile_picture || "/default-avatar.png",
-						githubUrl: data.github || "",
-						linkedinUrl: data.linkedin || "",
-						customUrl: data.custom_link || "",
-					};
-					setProfile(initialProfile);
-					setOriginalProfile(initialProfile);
-				}
-			}
-		};
-
-		fetchUserProfile();
-	}, [user]);
-
-	// Loading state
 	if (!isLoaded || !user) {
-		return (
-			<div className="min-h-screen flex items-center justify-center">
-				<div className="text-lg text-gray-600 dark:text-gray-300">
-					Loading...
-				</div>
-			</div>
-		);
+		return <div>Loading...</div>;
 	}
 
-	const handleUpdateProfile = async () => {
-		setIsLoading(true);
-		let profilePictureUrl = profile.profilePicture;
-
-		if (newProfilePic) {
-			const { data: uploadData, error: uploadError } = await supabase.storage
-				.from("user_pfp")
-				.upload(`public/${user?.id}/${newProfilePic.name}`, newProfilePic, {
-					cacheControl: "3600",
-					upsert: true,
-				});
-
-			if (uploadError) {
-				console.error("Error uploading profile picture: ", uploadError);
-			} else {
-				const { data: publicUrlData } = supabase.storage
-					.from("user_pfp")
-					.getPublicUrl(`public/${user?.id}/${newProfilePic.name}`);
-
-				profilePictureUrl = publicUrlData?.publicUrl || profile.profilePicture;
-			}
-		}
-
-		if (!user?.id) return;
-
-		const profileData: UserProfileData = {
-			user_id: user.id,
-			first_name: profile.firstName,
-			last_name: profile.lastName,
-			bio: profile.bio,
-			profile_picture: profilePictureUrl,
-			github: profile.githubUrl,
-			linkedin: profile.linkedinUrl,
-			custom_link: profile.customUrl,
-		};
-
-		console.log("Sending profile data:", profileData);
-
-		const result = await syncUserProfile(profileData);
-
-		if (result) {
-			toast.success("Profile updated successfully!");
-			setOriginalProfile(profile);
-		} else {
-			toast.error("Failed to update profile");
-		}
-
-		setIsLoading(false);
-		setIsChanged(false);
-	};
-
-	const handleInputChange = (field: string, value: string) => {
-		if (field.includes("Url")) {
-			try {
-				urlSchema.parse(value);
-			} catch (error) {
-				toast.error("Please enter a valid URL");
-				return;
-			}
-		}
-
-		setProfile((prev: any) => {
-			const updatedProfile = { ...prev, [field]: value };
-			setIsChanged(
-				updatedProfile.firstName !== originalProfile.firstName ||
-					updatedProfile.lastName !== originalProfile.lastName ||
-					updatedProfile.bio !== originalProfile.bio ||
-					updatedProfile.githubUrl !== originalProfile.githubUrl ||
-					updatedProfile.linkedinUrl !== originalProfile.linkedinUrl ||
-					updatedProfile.customUrl !== originalProfile.customUrl ||
-					(newProfilePic
-						? true
-						: updatedProfile.profilePicture !== originalProfile.profilePicture)
-			);
-			return updatedProfile;
-		});
-	};
-
-	const handleProfilePicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (file) {
-			setNewProfilePic(file);
-			setIsChanged(true);
-		}
-	};
-
 	return (
-		<div className="max-w-2xl mx-auto p-6 dark:bg-gray-900 dark:text-white">
-			<Card className="dark:bg-gray-800 dark:border-gray-700">
-				<CardHeader>
-					<CardTitle className="dark:text-white">Edit Profile</CardTitle>
-					<CardDescription className="dark:text-gray-300">
-						Update your profile information
+		<div className="container max-w-4xl mx-auto p-6">
+			<div className="flex items-center justify-between mb-8">
+				<div>
+					<h1 className="text-3xl font-bold tracking-tight">
+						Profile Settings
+					</h1>
+					<p className="text-sm text-muted-foreground">
+						Manage your personal information and preferences
+					</p>
+				</div>
+			</div>
+			<Separator className="my-6" />
+
+			<Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white/50 dark:bg-zinc-950/50 backdrop-blur-xl">
+				<CardHeader className="backdrop-blur-xl">
+					<CardTitle className="text-xl font-semibold">
+						Personal Information
+					</CardTitle>
+					<CardDescription>
+						Update your profile details and social links
 					</CardDescription>
 				</CardHeader>
-				<CardContent>
-					<div className="flex flex-col items-center gap-3">
+				<CardContent className="space-y-6">
+					{/* Profile Picture */}
+					<div className="flex flex-col items-center gap-4">
 						<Image
-							src={
-								profile.profilePicture ||
-								"https://static.vecteezy.com/system/resources/previews/009/292/244/original/default-avatar-icon-of-social-media-user-vector.jpg"
-							}
-							width={250}
-							height={250}
+							src={profile.profilePicture || "/default-avatar.png"}
+							width={100}
+							height={100}
 							alt="Profile Picture"
-							className="w-24 h-24 rounded-full mb-4"
+							className="rounded-full"
 						/>
 						<Input
 							type="file"
 							accept="image/*"
 							onChange={handleProfilePicChange}
-							className="dark:bg-gray-700 dark:text-white"
-						/>
-					</div>
-					<div className="mb-4">
-						<Label htmlFor="username" className="dark:text-white">
-							Username
-						</Label>
-						<Input
-							id="username"
-							value={user?.username || ""}
-							disabled
-							className="dark:bg-gray-700 dark:text-white"
+							className="w-full max-w-xs h-10 border-zinc-200 dark:border-zinc-800"
 						/>
 					</div>
 
-					<div className="mb-4">
-						<Label htmlFor="email" className="dark:text-white">
-							Email Address
-						</Label>
-						<Input
-							id="email"
-							value={user?.emailAddresses[0]?.emailAddress || ""}
-							disabled
-							className="dark:bg-gray-700 dark:text-white"
-						/>
+					<Separator className="my-6" />
+
+					{/* Basic Info */}
+					<div className="grid gap-4 md:grid-cols-2">
+						<div className="space-y-2">
+							<Label htmlFor="username">Username</Label>
+							<Input
+								id="username"
+								value={user?.username || ""}
+								disabled
+								className="h-10 border-zinc-200 dark:border-zinc-800 bg-zinc-50/50"
+							/>
+						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="email">Email Address</Label>
+							<Input
+								id="email"
+								value={user?.emailAddresses[0]?.emailAddress || ""}
+								disabled
+								className="h-10 border-zinc-200 dark:border-zinc-800 bg-zinc-50/50"
+							/>
+						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="firstName">First Name</Label>
+							<Input
+								id="firstName"
+								value={profile.firstName}
+								onChange={(e) => handleInputChange("firstName", e.target.value)}
+								className="h-10 border-zinc-200 dark:border-zinc-800"
+							/>
+						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="lastName">Last Name</Label>
+							<Input
+								id="lastName"
+								value={profile.lastName}
+								onChange={(e) => handleInputChange("lastName", e.target.value)}
+								className="h-10 border-zinc-200 dark:border-zinc-800"
+							/>
+						</div>
 					</div>
 
-					<div className="mb-4">
-						<Label htmlFor="firstName" className="dark:text-white">
-							First Name
-						</Label>
-						<Input
-							id="firstName"
-							value={profile.firstName}
-							onChange={(e) => handleInputChange("firstName", e.target.value)}
-							className="dark:bg-gray-700 dark:text-white"
-						/>
+					<Separator className="my-6" />
+
+					{/* Social Links */}
+					<div className="space-y-4">
+						<div className="space-y-2">
+							<Label htmlFor="githubUrl">GitHub URL</Label>
+							<Input
+								id="githubUrl"
+								value={profile.githubUrl}
+								onChange={(e) => handleInputChange("githubUrl", e.target.value)}
+								className="h-10 border-zinc-200 dark:border-zinc-800"
+								placeholder="https://github.com/username"
+							/>
+						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="linkedinUrl">LinkedIn URL</Label>
+							<Input
+								id="linkedinUrl"
+								value={profile.linkedinUrl}
+								onChange={(e) =>
+									handleInputChange("linkedinUrl", e.target.value)
+								}
+								className="h-10 border-zinc-200 dark:border-zinc-800"
+								placeholder="https://linkedin.com/in/username"
+							/>
+						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="customUrl">Personal Website</Label>
+							<Input
+								id="customUrl"
+								value={profile.customUrl}
+								onChange={(e) => handleInputChange("customUrl", e.target.value)}
+								className="h-10 border-zinc-200 dark:border-zinc-800"
+								placeholder="https://your-website.com"
+							/>
+						</div>
 					</div>
 
-					<div className="mb-4">
-						<Label htmlFor="lastName" className="dark:text-white">
-							Last Name
-						</Label>
-						<Input
-							id="lastName"
-							value={profile.lastName}
-							onChange={(e) => handleInputChange("lastName", e.target.value)}
-							className="dark:bg-gray-700 dark:text-white"
-						/>
-					</div>
+					<Separator className="my-6" />
 
-					<div className="mb-4">
-						<Label htmlFor="githubUrl" className="dark:text-white">
-							GitHub URL
-						</Label>
-						<Input
-							id="githubUrl"
-							value={profile.githubUrl}
-							onChange={(e) => handleInputChange("githubUrl", e.target.value)}
-							className="dark:bg-gray-700 dark:text-white"
-							placeholder="https://github.com/username"
-						/>
-					</div>
-
-					<div className="mb-4">
-						<Label htmlFor="linkedinUrl" className="dark:text-white">
-							LinkedIn URL
-						</Label>
-						<Input
-							id="linkedinUrl"
-							value={profile.linkedinUrl}
-							onChange={(e) => handleInputChange("linkedinUrl", e.target.value)}
-							className="dark:bg-gray-700 dark:text-white"
-							placeholder="https://linkedin.com/in/username"
-						/>
-					</div>
-
-					<div className="mb-4">
-						<Label htmlFor="customUrl" className="dark:text-white">
-							Custom URL
-						</Label>
-						<Input
-							id="customUrl"
-							value={profile.customUrl}
-							onChange={(e) => handleInputChange("customUrl", e.target.value)}
-							className="dark:bg-gray-700 dark:text-white"
-							placeholder="https://your-website.com"
-						/>
-					</div>
-
-					<div className="mb-4">
-						<Label htmlFor="bio" className="dark:text-white">
-							Bio
-						</Label>
+					{/* Bio */}
+					<div className="space-y-2">
+						<Label htmlFor="bio">Bio</Label>
 						<Textarea
 							id="bio"
 							value={profile.bio}
 							onChange={(e) => handleInputChange("bio", e.target.value)}
-							className="dark:bg-gray-700 dark:text-white"
+							className="min-h-[100px] border-zinc-200 dark:border-zinc-800"
+							placeholder="Tell us about yourself..."
 						/>
 					</div>
 				</CardContent>
-				<CardFooter>
+
+				<CardFooter className="flex justify-end space-x-4 pt-6">
 					<Button
 						onClick={handleUpdateProfile}
-						variant="default"
 						disabled={!isChanged || isLoading}
-						className={`dark:bg-gray-700 dark:text-white ${
-							!isChanged ? "opacity-50 cursor-not-allowed" : ""
-						}`}
+						className="h-9 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-50 dark:hover:bg-zinc-200 dark:text-zinc-900"
 					>
+						{isLoading ? (
+							<Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+						) : (
+							<Icons.save className="mr-2 h-4 w-4" />
+						)}
 						{isLoading ? "Saving..." : "Save Changes"}
 					</Button>
 				</CardFooter>

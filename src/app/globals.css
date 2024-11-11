@@ -181,16 +181,29 @@ div[cmdk-item] {
 	}
 }
 
-.border[role='dialog']
-{
+.border[role="dialog"] {
 	border-width: 0px;
 }
 
 /* Add to your global CSS or Tailwind config */
 .perspective-1000 {
 	perspective: 1000px;
-  }
-  
-  .transform-style-preserve-3d {
+}
+
+.transform-style-preserve-3d {
 	transform-style: preserve-3d;
-  }
+}
+
+/* Remove scrollbars but keep scrolling functionality */
+* {
+	/* For Chrome, Safari, and newer Edge */
+	&::-webkit-scrollbar {
+		display: none;
+	}
+
+	/* For Firefox */
+	scrollbar-width: none;
+
+	/* For Internet Explorer and Edge */
+	-ms-overflow-style: none;
+}

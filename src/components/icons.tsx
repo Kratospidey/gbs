@@ -5,6 +5,7 @@ export const Icons = {
 	spinner: Loader2,
 	draft: Save,
 	publish: Send,
+	save: Save,
 } as const;
 
 export type IconKeys = keyof typeof Icons;

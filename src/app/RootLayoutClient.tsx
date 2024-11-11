@@ -71,9 +71,9 @@ export default function RootLayoutClient({ children }: RootLayoutClientProps) {
 						className="fixed inset-0 dark:bg-black bg-white"
 						style={{
 							backgroundImage: `
-								linear-gradient(to right, rgba(255,255,255,0.2) 1px, transparent 1px),
-								linear-gradient(to bottom, rgba(255,255,255,0.2) 1px, transparent 1px)
-							`,
+                linear-gradient(to right, rgba(255,255,255,0.2) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.2) 1px, transparent 1px)
+              `,
 							backgroundSize: `${cellSize}px ${cellSize}px`,
 							backgroundPosition: "0 0",
 						}}
@@ -81,17 +81,16 @@ export default function RootLayoutClient({ children }: RootLayoutClientProps) {
 						{/* Radial gradient mask */}
 						<div className="absolute inset-0 bg-white dark:bg-black [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
 					</div>
-
 					{/* Cursor Animation Overlay */}
 					<GridCursorAnimation
 						gridSizeX={gridSizeX}
 						gridSizeY={gridSizeY}
 						cellSize={cellSize}
 						highlightRadius={highlightRadius}
+						style={{ zIndex: 1 }} // Lower z-index
 					/>
-
 					{/* Content */}
-					<div className="relative z-0">{children}</div>
+					<div className="relative z-10">{children}</div> {/* Higher z-index */}
 				</div>
 			</ThemeProvider>
 		</ClerkProvider>

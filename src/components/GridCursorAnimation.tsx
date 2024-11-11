@@ -10,6 +10,7 @@ interface GridCursorAnimationProps {
 	gridSizeY: number; // Number of grid cells vertically
 	cellSize: number; // Size of each grid cell in pixels
 	highlightRadius: number; // Radius in pixels to determine which cells to highlight
+	style?: React.CSSProperties;
 }
 
 export const GridCursorAnimation: React.FC<GridCursorAnimationProps> = ({
@@ -59,7 +60,7 @@ export const GridCursorAnimation: React.FC<GridCursorAnimationProps> = ({
 	return (
 		<div
 			className="absolute inset-0 pointer-events-none"
-			style={{ zIndex: 10 }}
+			style={{ zIndex: 5 }} // Lower z-index to stay behind components with higher z-index
 		>
 			{cursorPos &&
 				cells.map((cell) => {
@@ -82,9 +83,9 @@ export const GridCursorAnimation: React.FC<GridCursorAnimationProps> = ({
 									left: cell.x - cellSize / 2,
 									width: cellSize,
 									height: cellSize,
-									border: `1px solid rgba(255, 255, 255, ${opacity})`,
+									border: `1px solid rgba(255, 255, 255, ${opacity * 0.5})`, // Reduced opacity
 									borderRadius: "4px",
-									boxShadow: `0 0 10px rgba(255, 255, 255, ${opacity})`,
+									boxShadow: `0 0 10px rgba(255, 255, 255, ${opacity * 0.3})`, // Reduced opacity
 									pointerEvents: "none",
 									mixBlendMode: "screen",
 								}}
