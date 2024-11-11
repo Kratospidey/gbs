@@ -216,7 +216,9 @@ const DashboardPage: React.FC = () => {
 			</h1>
 
 			{/* Filter Buttons */}
-			<div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-8 px-2">
+			<div className="flex flex-wrap justify-center gap-2 sm:gap-4 mb-1 px-2">
+				{" "}
+				{/* reduced mb-8 to mb-4 */}
 				{filterOptions.map(({ label, value }) => (
 					<Button
 						key={label}
@@ -229,9 +231,10 @@ const DashboardPage: React.FC = () => {
 							text-xs 
 							font-medium
 							whitespace-nowrap
-							${filter === value 
-								? "bg-zinc-800 text-zinc-100 hover:bg-zinc-700" 
-								: "bg-zinc-950/40 backdrop-blur-sm border border-zinc-800 text-zinc-300 hover:bg-zinc-900 hover:text-zinc-100"
+							${
+								filter === value
+									? "bg-zinc-800 text-zinc-100 hover:bg-zinc-700"
+									: "bg-zinc-950/40 backdrop-blur-sm border border-zinc-800 text-zinc-300 hover:bg-zinc-900 hover:text-zinc-100"
 							}
 						`}
 					>
@@ -243,7 +246,11 @@ const DashboardPage: React.FC = () => {
 			{/* Post Cards */}
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-40">
 				{isLoading ? (
-					<p className="text-center text-muted-foreground">Loading...</p>
+					<p className="col-span-full text-center text-zinc-300 mt-20">
+						{" "}
+						{/* added styling */}
+						Loading...
+					</p>
 				) : posts.length > 0 ? (
 					posts.map((post: Post) => (
 						<DashboardPostCard

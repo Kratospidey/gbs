@@ -59,7 +59,7 @@ const UserProfilePage = () => {
 				// Add username from URL to user object
 				setUser({
 					...data.user,
-					username: username as string // Add username from URL params
+					username: username as string, // Add username from URL params
 				});
 
 				const filteredPosts: UserPost[] = data.posts
@@ -202,7 +202,7 @@ const UserProfilePage = () => {
 
 				{/* User's Published Posts */}
 				<div className="mt-8">
-					<h3 className="text-2xl font-semibold mb-6 text-zinc-900 dark:text-zinc-100">
+					<h3 className="text-2xl font-semibold mb-4 text-zinc-900 dark:text-zinc-100 text-center">
 						Published Posts
 					</h3>
 					{posts.length === 0 ? (
@@ -210,7 +210,7 @@ const UserProfilePage = () => {
 							No published posts yet.
 						</p>
 					) : (
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3 lg:gap-4 place-items-center">
 							{posts.map((post) => (
 								<ProfilePostCard key={post._id} post={post} />
 							))}

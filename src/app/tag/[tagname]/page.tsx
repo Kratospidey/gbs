@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { ThreeDPostCard } from "@/components/ThreeDPostCard";
+import ThreeDPostCard from "@/components/ThreeDPostCard";
 
 interface Author {
 	username: string;
@@ -59,13 +59,13 @@ const TagPage: React.FC = () => {
 	return (
 		<div className="min-h-screen">
 			<div className="max-w-7xl mx-auto p-6">
-				<h1 className="text-4xl font-bold mb-6 text-zinc-800 dark:text-zinc-100">
+				<h1 className="text-4xl font-bold mb-0.5 text-zinc-800 dark:text-zinc-100 text-center">
 					Posts Tagged with &quot;{tagname}&quot;
 				</h1>
 
 				{/* Loading State */}
 				{isLoading && (
-					<p className="text-center text-zinc-600 dark:text-zinc-300">
+					<p className="text-center text-zinc-600 dark:text-zinc-300 mt-20">
 						Loading posts...
 					</p>
 				)}
