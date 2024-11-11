@@ -34,7 +34,7 @@ export const ThreeDPostCard: React.FC<ThreeDPostCardProps> = ({ post }) => {
 
 	return (
 		<CardContainer className="inter-var">
-			<CardBody className="relative group/card bg-zinc-950/90 dark:hover:shadow-lg dark:hover:shadow-zinc-200/[0.1] border-zinc-800 w-auto sm:w-[21rem] h-auto rounded-lg p-6 border transition-colors">
+			<CardBody className="relative group/card bg-zinc-950/90 dark:hover:shadow-lg dark:hover:shadow-zinc-200/[0.1] border-zinc-800 w-80 sm:w-[21rem] h-[28rem] rounded-lg p-6 border transition-colors">
 				<CardItem
 					translateZ={50}
 					className="text-xl font-semibold text-zinc-100 tracking-tight"
@@ -62,12 +62,12 @@ export const ThreeDPostCard: React.FC<ThreeDPostCardProps> = ({ post }) => {
 						</>
 					)}
 				</CardItem>
-				<CardItem translateZ={100} className="w-full mt-4">
+				<CardItem translateZ={100} className="w-full mt-4 h-48">
 					<Image
 						src={post.mainImageUrl || "/default-thumbnail.jpg"}
-						height={1000}
-						width={1000}
-						className="h-40 w-full object-cover rounded-md transition-all duration-300"
+						height={500}
+						width={500}
+						className="w-full h-full object-cover rounded-md transition-all duration-300"
 						alt="thumbnail"
 					/>
 				</CardItem>
