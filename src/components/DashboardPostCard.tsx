@@ -5,20 +5,18 @@ import React from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Tag } from "@/components/Tag";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { CardBody, CardContainer, CardItem } from "./ui/3d-card";
 
-// Common styles to apply across all cards
 const commonCardBody = `
   relative group/card 
   bg-zinc-950/90 
   dark:hover:shadow-lg 
   dark:hover:shadow-zinc-200/[0.1] 
   border-zinc-800 
-  w-auto sm:w-[21rem] 
-  h-auto 
+  w-80 sm:w-[21rem] 
+  h-[28rem] 
   rounded-lg 
   p-6 
   border 
@@ -36,20 +34,21 @@ const commonButton = `
   transition-colors
 `;
 
-const getStatusStyle = (status: Post['status']) => {
-  const baseStyle = "px-2 py-1 rounded-md text-[10px] font-medium transition-colors";
-  switch (status) {
-    case "published":
-      return `${baseStyle} bg-zinc-800 text-zinc-100`;
-    case "draft":
-      return `${baseStyle} bg-zinc-900 text-zinc-400`;
-    case "pending":
-      return `${baseStyle} bg-zinc-800 text-zinc-300`;
-    case "archived":
-      return `${baseStyle} bg-zinc-900 text-zinc-500`;
-    default:
-      return `${baseStyle} bg-zinc-900 text-zinc-400`;
-  }
+const getStatusStyle = (status: Post["status"]) => {
+	const baseStyle =
+		"px-2 py-1 rounded-md text-[10px] font-medium transition-colors";
+	switch (status) {
+		case "published":
+			return `${baseStyle} bg-zinc-800 text-zinc-100`;
+		case "draft":
+			return `${baseStyle} bg-zinc-900 text-zinc-400`;
+		case "pending":
+			return `${baseStyle} bg-zinc-800 text-zinc-300`;
+		case "archived":
+			return `${baseStyle} bg-zinc-900 text-zinc-500`;
+		default:
+			return `${baseStyle} bg-zinc-900 text-zinc-400`;
+	}
 };
 
 interface Author {
@@ -120,10 +119,7 @@ const DashboardPostCard: React.FC<DashboardPostCardProps> = ({
 					>
 						{post.title}
 					</CardItem>
-					<CardItem
-						translateZ={20}
-						className={getStatusStyle(post.status)}
-					>
+					<CardItem translateZ={20} className={getStatusStyle(post.status)}>
 						{post.status.charAt(0).toUpperCase() + post.status.slice(1)}
 					</CardItem>
 				</div>
@@ -134,13 +130,13 @@ const DashboardPostCard: React.FC<DashboardPostCardProps> = ({
 				>
 					Published on {new Date(post.publishedAt).toLocaleDateString()}
 				</CardItem>
-				<CardItem translateZ={100} className="w-full mt-4">
+				<CardItem translateZ={100} className="w-full mt-4 h-48">
 					<Image
 						src={post.mainImageUrl || "/default-thumbnail.jpg"}
 						alt={post.title}
 						width={400}
 						height={200}
-						className="h-40 w-full object-cover rounded-xl group-hover/card:shadow-xl"
+						className="w-full h-full object-cover rounded-xl group-hover/card:shadow-xl"
 					/>
 				</CardItem>
 				<div className="flex justify-around items-center mt-6">
@@ -155,16 +151,10 @@ const DashboardPostCard: React.FC<DashboardPostCardProps> = ({
 					)}
 					{isArchived ? (
 						<>
-							<Button
-								onClick={handleUnarchive}
-								className={commonButton}
-							>
+							<Button onClick={handleUnarchive} className={commonButton}>
 								Unarchive
 							</Button>
-							<Button
-								onClick={handleDelete}
-								className={commonButton}
-							>
+							<Button onClick={handleDelete} className={commonButton}>
 								Delete
 							</Button>
 						</>

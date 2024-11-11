@@ -25,16 +25,12 @@ interface Post {
 	author?: Author;
 }
 
-interface ThreeDPostCardProps {
-	post: Post;
-}
-
-export const ThreeDPostCard: React.FC<ThreeDPostCardProps> = ({ post }) => {
+const ThreeDPostCard: React.FC<{ post: Post }> = ({ post }) => {
 	const router = useRouter();
 
 	return (
 		<CardContainer className="inter-var">
-			<CardBody className="relative group/card bg-zinc-950/90 dark:hover:shadow-lg dark:hover:shadow-zinc-200/[0.1] border-zinc-800 w-80 sm:w-[21rem] h-[28rem] rounded-lg p-6 border transition-colors">
+			<CardBody className="relative group/card bg-zinc-950/90 dark:hover:shadow-lg dark:hover:shadow-zinc-200/[0.1] border-zinc-800 w-80 sm:w-[21rem] min-h-[28rem] rounded-lg p-6 border transition-colors">
 				<CardItem
 					translateZ={50}
 					className="text-xl font-semibold text-zinc-100 tracking-tight"
@@ -67,11 +63,11 @@ export const ThreeDPostCard: React.FC<ThreeDPostCardProps> = ({ post }) => {
 						src={post.mainImageUrl || "/default-thumbnail.jpg"}
 						height={500}
 						width={500}
-						className="w-full h-full object-cover rounded-md transition-all duration-300"
+						className="w-full h-full object-cover rounded-md"
 						alt="thumbnail"
 					/>
 				</CardItem>
-				<div className="flex justify-center mt-12">
+				<div className="flex justify-center mt-6">
 					<CardItem
 						translateZ={20}
 						as={Link}
@@ -81,25 +77,23 @@ export const ThreeDPostCard: React.FC<ThreeDPostCardProps> = ({ post }) => {
 						Read More →
 					</CardItem>
 				</div>
-				{post.tags && (
-					<div className="mt-4 flex flex-wrap gap-2">
-						{post.tags.map((tag) => (
-							<div
-								key={tag}
-								onClick={() => router.push(`/tag/${tag}`)}
-								className="cursor-pointer"
-							>
-								<CardItem
-									translateZ={20}
-									className="px-2 py-1 text-[10px] font-medium bg-zinc-900 text-zinc-400 rounded-md hover:bg-zinc-800 hover:text-zinc-100 transition-colors"
+				{post.tags && post.tags.length > 0 && (
+					<CardItem translateZ={20} className="mt-4">
+						<div className="flex flex-wrap gap-2">
+							{post.tags.map((tag) => (
+								<span
+									key={tag}
+									className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-800 text-zinc-200"
 								>
 									{tag}
-								</CardItem>
-							</div>
-						))}
-					</div>
+								</span>
+							))}
+						</div>
+					</CardItem>
 				)}
 			</CardBody>
 		</CardContainer>
 	);
 };
+
+export default ThreeDPostCard;

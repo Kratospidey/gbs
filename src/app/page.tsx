@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ThreeDPostCard } from "@/components/ThreeDPostCard";
+import ThreeDPostCard from "@/components/ThreeDPostCard";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
 	Select,

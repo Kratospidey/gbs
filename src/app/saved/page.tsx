@@ -101,8 +101,8 @@ export default function SavedPostsPage() {
 
 	if (isLoading) {
 		return (
-			<div className="flex items-center justify-center min-h-screen bg-gray-50">
-				<div className="text-lg text-gray-600">Loading saved posts...</div>
+			<div className="flex items-center justify-center min-h-screen">
+				<div className="text-lg text-white-600">Loading saved posts...</div>
 			</div>
 		);
 	}
