@@ -75,8 +75,8 @@ const HomePage: React.FC = () => {
 		fetchPosts();
 	}, [sortOrder, debouncedTagFilter]);
 
-	const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-		setSortOrder(e.target.value as "asc" | "desc");
+	const handleSortChange = (value: "asc" | "desc") => {
+		setSortOrder(value);
 	};
 
 	const handleTagFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,18 +97,15 @@ const HomePage: React.FC = () => {
 				{/* Sorting and Filtering Options */}
 				<div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 space-y-4 md:space-y-0 md:space-x-4">
 					{/* Sort By Date */}
-					<div className="flex items-center space-x-2">
+					<div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
 						<label
 							htmlFor="sort"
 							className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
 						>
 							Sort by Date
 						</label>
-						<Select
-							value={sortOrder}
-							onValueChange={(value) => setSortOrder(value as "asc" | "desc")}
-						>
-							<SelectTrigger className="w-[180px] bg-white/50 dark:bg-zinc-950/50 border-zinc-200 dark:border-zinc-800 backdrop-blur-xl text-zinc-900 dark:text-zinc-100 focus:ring-zinc-200 dark:focus:ring-zinc-800">
+						<Select value={sortOrder} onValueChange={handleSortChange}>
+							<SelectTrigger className="w-full sm:w-48 bg-white/50 dark:bg-zinc-950/50 border-zinc-200 dark:border-zinc-800 backdrop-blur-xl text-zinc-900 dark:text-zinc-100">
 								<SelectValue placeholder="Select order" />
 							</SelectTrigger>
 							<SelectContent className="bg-white/80 dark:bg-zinc-950/80 border-zinc-200 dark:border-zinc-800 backdrop-blur-xl">
@@ -131,7 +128,7 @@ const HomePage: React.FC = () => {
 					{/* Filter by Tags */}
 					<form
 						onSubmit={handleTagSubmit}
-						className="flex items-center space-x-2 backdrop-blur-xl rounded-md p-2 bg-white/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 w-full sm:w-auto"
+						className="w-full sm:w-auto flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 backdrop-blur-xl rounded-md p-2 bg-white/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800"
 					>
 						<label
 							htmlFor="tags"
@@ -146,7 +143,7 @@ const HomePage: React.FC = () => {
 								placeholder="e.g., react, nextjs"
 								value={tagFilter}
 								onChange={handleTagFilterChange}
-								className="w-full sm:w-[200px] bg-white/50 dark:bg-zinc-950/50 border-zinc-200 dark:border-zinc-800 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 backdrop-blur-xl"
+								className="w-full sm:w-48 bg-white/50 dark:bg-zinc-950/50 border-zinc-200 dark:border-zinc-800 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 backdrop-blur-xl"
 							/>
 							<Button
 								type="submit"
@@ -173,7 +170,7 @@ const HomePage: React.FC = () => {
 
 				{/* Posts List */}
 				{!isLoading && !error && (
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
 						{posts.map((post) => (
 							<ThreeDPostCard key={post._id} post={post} />
 						))}

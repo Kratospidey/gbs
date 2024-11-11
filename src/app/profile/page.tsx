@@ -218,28 +218,27 @@ const ProfilePage: React.FC = () => {
 	}
 
 	return (
-		<div className="container max-w-4xl mx-auto p-6">
-			<div className="flex items-center justify-between mb-8">
-				<div>
-					<h1 className="text-3xl font-bold tracking-tight">
-						Profile Settings
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						Manage your personal information and preferences
-					</p>
-				</div>
+		<div className="container max-w-4xl mx-auto px-4 sm:px-6 py-6">
+			<div className="flex flex-col space-y-2 mb-8">
+				<h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+					Profile Settings
+				</h1>
+				<p className="text-sm text-muted-foreground">
+					Manage your personal information and preferences
+				</p>
 			</div>
-			<Separator className="my-6" />
+			<Separator className="my-4 sm:my-6" />
 
 			<Card className="border-zinc-200 dark:border-zinc-800 shadow-sm bg-white/50 dark:bg-zinc-950/50 backdrop-blur-xl">
-				<CardHeader className="backdrop-blur-xl">
-					<CardTitle className="text-xl font-semibold">
+				<CardHeader>
+					<CardTitle className="text-lg sm:text-xl font-semibold">
 						Personal Information
 					</CardTitle>
 					<CardDescription>
 						Update your profile details and social links
 					</CardDescription>
 				</CardHeader>
+
 				<CardContent className="space-y-6">
 					{/* Profile Picture */}
 					<div className="flex flex-col items-center gap-4">
@@ -248,7 +247,7 @@ const ProfilePage: React.FC = () => {
 							width={100}
 							height={100}
 							alt="Profile Picture"
-							className="rounded-full"
+							className="rounded-full object-cover"
 						/>
 						<Input
 							type="file"
@@ -258,10 +257,10 @@ const ProfilePage: React.FC = () => {
 						/>
 					</div>
 
-					<Separator className="my-6" />
+					<Separator className="my-4 sm:my-6" />
 
 					{/* Basic Info */}
-					<div className="grid gap-4 md:grid-cols-2">
+					<div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
 						<div className="space-y-2">
 							<Label htmlFor="username">Username</Label>
 							<Input
@@ -303,7 +302,7 @@ const ProfilePage: React.FC = () => {
 						</div>
 					</div>
 
-					<Separator className="my-6" />
+					<Separator className="my-4 sm:my-6" />
 
 					{/* Social Links */}
 					<div className="space-y-4">
@@ -343,7 +342,7 @@ const ProfilePage: React.FC = () => {
 						</div>
 					</div>
 
-					<Separator className="my-6" />
+					<Separator className="my-4 sm:my-6" />
 
 					{/* Bio */}
 					<div className="space-y-2">
