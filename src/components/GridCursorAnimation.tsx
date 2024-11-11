@@ -27,8 +27,8 @@ export const GridCursorAnimation: React.FC<GridCursorAnimationProps> = ({
 	// Throttled mouse move handler for performance
 	const handleMouseMove = useCallback(
 		throttle((e: MouseEvent) => {
-			setCursorPos({ x: e.clientX, y: e.clientY }); // Use clientX/Y for viewport-relative coordinates
-		}, 50), // Throttle delay in ms
+			setCursorPos({ x: e.clientX, y: e.clientY });
+		}, 50),
 		[]
 	);
 
@@ -90,7 +90,7 @@ export const GridCursorAnimation: React.FC<GridCursorAnimationProps> = ({
 
 	return (
 		<div
-			className="fixed inset-0 pointer-events-none"
+			className="fixed inset-0 pointer-events-none bg-black"
 			style={{
 				position: "fixed",
 				top: 0,
@@ -115,11 +115,10 @@ export const GridCursorAnimation: React.FC<GridCursorAnimationProps> = ({
 							left: cell.x - cellSize / 2,
 							width: cellSize,
 							height: cellSize,
-							border: `1px solid rgba(255, 255, 255, ${cell.opacity * 0.5})`,
+							border: `1px solid rgba(255, 255, 255, ${cell.opacity * 0.8})`,
 							borderRadius: "4px",
-							boxShadow: `0 0 10px rgba(255, 255, 255, ${cell.opacity * 0.3})`,
+							boxShadow: `0 0 15px rgba(255, 255, 255, ${cell.opacity * 0.2})`,
 							pointerEvents: "none",
-							mixBlendMode: "screen",
 						}}
 					/>
 				))}

@@ -66,21 +66,6 @@ export default function RootLayoutClient({ children }: RootLayoutClientProps) {
 			>
 				{/* Background wrapper */}
 				<div className="relative min-h-screen">
-					{/* Grid background with mask */}
-					<div
-						className="fixed inset-0 dark:bg-black bg-white"
-						style={{
-							backgroundImage: `
-                linear-gradient(to right, rgba(255,255,255,0.2) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(255,255,255,0.2) 1px, transparent 1px)
-              `,
-							backgroundSize: `${cellSize}px ${cellSize}px`,
-							backgroundPosition: "0 0",
-						}}
-					>
-						{/* Radial gradient mask */}
-						<div className="absolute inset-0 bg-white dark:bg-black [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
-					</div>
 					{/* Cursor Animation Overlay */}
 					<GridCursorAnimation
 						gridSizeX={gridSizeX}
