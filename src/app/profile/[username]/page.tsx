@@ -8,24 +8,29 @@ import { FaLinkedin, FaGithub, FaGlobe } from "react-icons/fa";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LinkPreview } from "@/components/ui/link-preview";
-import ProfilePostCard from "@/components/ProfilePostCard"; // Updated import
+import ProfilePostCard from "@/components/ProfilePostCard";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 interface UserProfile {
-	user_id: string;
-	first_name: string;
-	last_name: string;
-	email: string;
+	firstName: string;
+	lastName: string;
 	bio: string;
-	profile_picture?: string;
+	profilePicture?: string;
 	github?: string;
 	linkedin?: string;
-	custom_link?: string;
-	username: string;
+	website?: string;
+	name: string;
+	email: string; // Added email
 }
 
-// Update UserPost interface to match expected Author type
+interface Author {
+	username: string;
+	clerk_id: string;
+	firstName: string;
+	lastName: string;
+}
+
 interface UserPost {
 	_id: string;
 	title: string;
@@ -34,12 +39,7 @@ interface UserPost {
 	mainImageUrl?: string;
 	status: "pending" | "published" | "draft" | "archived";
 	tags?: string[];
-	author?: {
-		username: string;
-		firstName: string; // Added
-		lastName: string; // Added
-		clerk_id: string;
-	};
+	author?: Author; // Updated to include firstName and lastName
 }
 
 const UserProfilePage = () => {
@@ -56,29 +56,23 @@ const UserProfilePage = () => {
 
 				if (!res.ok) throw new Error(data.error);
 
-				// Add username from URL to user object
-				setUser({
-					...data.user,
-					username: username as string, // Add username from URL params
-				});
+				setUser(data.user);
 
-				const filteredPosts: UserPost[] = data.posts
-					.filter((post: any) => post.status === "published")
-					.map((post: any) => ({
-						_id: post._id,
-						title: post.title,
-						slug: post.slug,
-						publishedAt: post.publishedAt || new Date().toISOString(),
-						mainImageUrl: post.mainImageUrl || "/default-thumbnail.jpg",
-						status: post.status || "published",
-						tags: post.tags || [],
-						author: {
-							username: post.author?.username || (username as string),
-							firstName: data.user.first_name,
-							lastName: data.user.last_name,
-							clerk_id: post.author?.clerk_id,
-						},
-					}));
+				const filteredPosts: UserPost[] = data.posts.map((post: any) => ({
+					_id: post._id,
+					title: post.title,
+					slug: post.slug,
+					publishedAt: post.publishedAt || new Date().toISOString(),
+					mainImageUrl: post.mainImageUrl || "/default-thumbnail.jpg",
+					status: post.status || "published",
+					tags: post.tags || [],
+					author: {
+						username: post.author?.username || username,
+						clerk_id: post.author?.clerk_id || "",
+						firstName: post.author?.firstName || "",
+						lastName: post.author?.lastName || "",
+					},
+				}));
 
 				setPosts(filteredPosts);
 			} catch (error) {
@@ -102,6 +96,7 @@ const UserProfilePage = () => {
 				</div>
 			</div>
 		);
+
 	if (!user)
 		return (
 			<div className="min-h-screen flex items-center justify-center">
@@ -118,60 +113,78 @@ const UserProfilePage = () => {
 				<div className="flex items-center space-x-6 mb-8">
 					<Avatar className="h-24 w-24">
 						<AvatarImage
-							src={user.profile_picture || "/default-avatar.png"}
-							alt={`${user.first_name} ${user.last_name}`}
+							src={user.profilePicture || "/default-avatar.png"}
+							alt={`${user.firstName} ${user.lastName}`}
 						/>
 						<AvatarFallback>
-							{user?.first_name?.charAt(0).toUpperCase() || "U"}
+							{user.firstName.charAt(0).toUpperCase() || "U"}
 						</AvatarFallback>
 					</Avatar>
 
 					<div className="space-y-4">
 						<div>
-							<h2 className="text-3xl font-bold text-foreground">{`${user.first_name} ${user.last_name}`}</h2>
-							<p className="text-muted-foreground">@{user.username}</p>
+							<h2 className="text-3xl font-bold text-foreground">{`${user.firstName} ${user.lastName}`}</h2>
+							<p className="text-muted-foreground">@{user.name}</p>
 						</div>
 
 						<p className="text-foreground">{user.bio}</p>
 
 						<div className="flex gap-3">
 							{user.github && (
-								<Button
-									variant="outline"
-									size="icon"
-									className="text-zinc-500 hover:text-zinc-700 p-2"
-									asChild
-								>
-									<LinkPreview url={user.github}>
-										<FaGithub className="h-5 w-5 text-zinc-500 hover:text-zinc-700" />
-									</LinkPreview>
-								</Button>
+								<LinkPreview url={user.github}>
+									<Button
+										variant="outline"
+										size="icon"
+										className="text-zinc-500 hover:text-zinc-700 p-2"
+										asChild
+									>
+										<Link
+											href={user.github}
+											target="_blank"
+											rel="noopener noreferrer"
+										>
+											<FaGithub className="h-5 w-5" />
+										</Link>
+									</Button>
+								</LinkPreview>
 							)}
 
 							{user.linkedin && (
-								<Button
-									variant="outline"
-									size="icon"
-									className="text-zinc-500 hover:text-zinc-700 p-2"
-									asChild
-								>
-									<LinkPreview url={user.linkedin}>
-										<FaLinkedin className="h-5 w-5 text-zinc-500 hover:text-zinc-700" />
-									</LinkPreview>
-								</Button>
+								<LinkPreview url={user.linkedin}>
+									<Button
+										variant="outline"
+										size="icon"
+										className="text-zinc-500 hover:text-zinc-700 p-2"
+										asChild
+									>
+										<Link
+											href={user.linkedin}
+											target="_blank"
+											rel="noopener noreferrer"
+										>
+											<FaLinkedin className="h-5 w-5" />
+										</Link>
+									</Button>
+								</LinkPreview>
 							)}
 
-							{user.custom_link && (
-								<Button
-									variant="outline"
-									size="icon"
-									className="text-zinc-500 hover:text-zinc-700 p-2"
-									asChild
-								>
-									<LinkPreview url={user.custom_link}>
-										<FaGlobe className="h-5 w-5 text-zinc-500 hover:text-zinc-700" />
-									</LinkPreview>
-								</Button>
+							{user.website && (
+								<LinkPreview url={user.website}>
+									<Button
+										variant="outline"
+										size="icon"
+										className="text-zinc-500 hover:text-zinc-700 p-2"
+										asChild
+									>
+										<Link
+											href={user.website}
+											target="_blank"
+											rel="noopener noreferrer"
+										>
+											<FaGlobe className="h-5 w-5" />
+										</Link>
+									</Button>
+								</LinkPreview>
 							)}
 
 							<Button

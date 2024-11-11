@@ -1,8 +1,9 @@
 // src/app/api/profile/[username]/route.ts
 import { NextResponse } from "next/server";
 import client from "@/lib/sanityClient"; // Sanity client
-import { supabase } from "@/lib/supabaseClient"; // Supabase client
 import { clerkClient } from "@clerk/nextjs/server"; // Clerk client
+import { urlFor } from "@/lib/urlFor"; // URL builder for Sanity images
+import groq from "groq"; // GROQ tagged template
 
 export async function GET(
 	request: Request,
@@ -11,55 +12,71 @@ export async function GET(
 	try {
 		console.log("API: Fetching user", params.username);
 
-		// Fetch Clerk users by username
-		const clerk = await clerkClient();
-		const clerkResponse = await clerk.users.getUserList({
-			username: [params.username],
+		// Step 1: Query Sanity to find the author by username
+		const authorQuery = groq`*[_type == "author" && name == $username][0]{
+			clerk_id,
+			_id,
+			name,
+			firstName,
+			lastName,
+			bio,
+			image,
+			"github": coalesce(github, ""),    // Add coalesce to handle null/undefined
+			"linkedin": coalesce(linkedin, ""), // Add coalesce to handle null/undefined
+			"website": coalesce(website, ""),   // Add coalesce to handle null/undefined
+			email
+		  }`;
+		const author = await client.fetch(authorQuery, {
+			username: params.username,
 		});
 
-		const clerkUsers = clerkResponse.data;
-
-		console.log("API: Clerk users found:", clerkUsers.length);
-
-		if (!clerkUsers.length) {
+		if (!author || !author.clerk_id) {
+			console.log("API: Author not found in Sanity or clerk_id missing.");
 			return NextResponse.json({ error: "User not found" }, { status: 404 });
 		}
 
-		// Get Supabase profile
-		const { data: profile, error } = await supabase
-			.from("user_profiles")
-			.select("*")
-			.eq("user_id", clerkUsers[0].id)
-			.single();
+		console.log("API: Found author in Sanity:", author);
 
-		console.log("API: Supabase profile:", profile);
+		// Step 2: Use clerk_id to fetch the Clerk user
+		const clerkInstance =
+			typeof clerkClient === "function" ? await clerkClient() : clerkClient;
 
-		if (error) {
-			console.error("API: Supabase error:", error);
-			throw error;
+		const clerkUser = await clerkInstance.users.getUser(author.clerk_id);
+
+		if (!clerkUser) {
+			console.log("API: Clerk user not found with clerk_id:", author.clerk_id);
+			return NextResponse.json(
+				{ error: "User not found in Clerk" },
+				{ status: 404 }
+			);
 		}
 
-		// Updated Sanity query to correctly fetch posts
-		const posts = await client.fetch(
-			`*[_type == "post" && author->name == $username && status == "published"] {
-        _id,
-        title,
-        "slug": slug.current,
-        publishedAt,
-        "mainImageUrl": mainImage.asset->url,
-        status,
-        "tags": tags,
-        author-> {
-          "username": name, // Explicitly rename to username here
-          clerk_id
-        }
-      }`,
-			{ username: params.username }
-		);
+		const email =
+			clerkUser.emailAddresses && clerkUser.emailAddresses.length > 0
+				? clerkUser.emailAddresses[0].emailAddress
+				: "";
 
-		console.log("API: Fetched Posts:", JSON.stringify(posts, null, 2));
+		// Step 3: Fetch published posts by author using corrected GROQ query
+		const postsQuery = groq`*[_type == "post" && author._ref == $authorId && status == "published"]{
+      _id,
+      title,
+      "slug": slug.current,
+      publishedAt,
+      "mainImageUrl": mainImage.asset->url,
+      status,
+      tags, // Corrected field
+      author->{
+        username,
+        clerk_id,
+        firstName,
+        lastName
+      }
+    }`;
+		const posts = await client.fetch(postsQuery, { authorId: author._id });
 
-		// Enrich posts with author information
+		console.log("API: Fetched posts:", posts.length);
+
+		// Step 4: Enrich posts with author information
 		const enrichedPosts = posts.map((post: any) => ({
 			_id: post._id,
 			title: post.title,
@@ -69,16 +86,39 @@ export async function GET(
 			status: post.status,
 			tags: post.tags || [],
 			author: {
-				username: post.author?.username || params.username, // Explicitly check for `username`
+				username: post.author?.username || params.username,
 				clerk_id: post.author?.clerk_id,
+				firstName: post.author?.firstName || "",
+				lastName: post.author?.lastName || "",
 			},
 		}));
 
+		// Step 5: Prepare user data including email
+		const user = {
+			name: author.name,
+			firstName: author.firstName,
+			lastName: author.lastName,
+			bio: Array.isArray(author.bio)
+				? author.bio
+						.map((block: any) =>
+							block.children.map((child: any) => child.text).join("")
+						)
+						.join("\n")
+				: author.bio,
+			profilePicture: author.image ? urlFor(author.image).url() : null,
+			github: author.github || "",
+			linkedin: author.linkedin || "",
+			website: author.website || "",
+			email: email,
+		};
+
+		console.log("API: User data prepared successfully.");
+
 		return NextResponse.json(
-			{ user: profile, posts: enrichedPosts },
+			{ user: user, posts: enrichedPosts },
 			{ status: 200 }
 		);
-	} catch (error) {
+	} catch (error: any) {
 		console.error("API: Error fetching profile data:", error);
 		return NextResponse.json(
 			{ error: "Failed to fetch profile data." },

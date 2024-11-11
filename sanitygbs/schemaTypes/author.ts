@@ -1,3 +1,4 @@
+// schemas/author.ts
 import {defineField, defineType} from 'sanity'
 
 export default defineType({
@@ -9,6 +10,19 @@ export default defineType({
       name: 'name',
       title: 'Username',
       type: 'string',
+      readOnly: true, // Make it non-editable
+    }),
+    defineField({
+      name: 'firstName',
+      title: 'First Name',
+      type: 'string',
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'lastName',
+      title: 'Last Name',
+      type: 'string',
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'slug',
@@ -26,6 +40,8 @@ export default defineType({
       options: {
         hotspot: true,
       },
+      // Make image nullable
+      // In Sanity, to allow null, don't enforce required
     }),
     defineField({
       name: 'bio',
@@ -39,26 +55,37 @@ export default defineType({
           lists: [],
         },
       ],
+      validation: (Rule) => Rule.min(0),
     }),
     defineField({
       name: 'clerk_id',
       title: 'Clerk ID',
       type: 'string',
+      validation: (Rule) => Rule.required(),
     }),
     defineField({
       name: 'linkedin',
       title: 'LinkedIn URL',
       type: 'url',
+      // Optional by default
     }),
     defineField({
       name: 'github',
       title: 'GitHub URL',
       type: 'url',
+      // Optional by default
     }),
     defineField({
       name: 'website',
       title: 'Personal Website',
       type: 'url',
+      // Optional by default
+    }),
+    defineField({
+      name: 'email',
+      title: 'Email',
+      type: 'string',
+      validation: (Rule) => Rule.required().email(),
     }),
   ],
   preview: {

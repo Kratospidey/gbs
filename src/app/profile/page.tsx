@@ -3,13 +3,13 @@
 
 import React, { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
-import { supabase } from "@/lib/supabaseClient";
+import client from "@/lib/sanityClient";
+import { urlFor } from "@/lib/urlFor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { toast } from "react-hot-toast"; // Replaced Toastify with React Hot Toast
-import { syncUserProfile } from "@/lib/syncUserProfile";
+import { toast } from "react-hot-toast";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -27,13 +27,15 @@ import {
 
 // Types and validation schemas
 interface Profile {
+	username: string;
 	firstName: string;
 	lastName: string;
-	bio: string;
+	bio: string; // Changed to string for simpler handling
 	profilePicture: string | null;
 	githubUrl: string;
 	linkedinUrl: string;
 	customUrl: string;
+	email: string; // Added email
 }
 
 const urlSchema = z.preprocess((arg) => {
@@ -49,6 +51,7 @@ const ProfilePage: React.FC = () => {
 
 	// State declarations
 	const [profile, setProfile] = useState<Profile>({
+		username: "",
 		firstName: "",
 		lastName: "",
 		bio: "",
@@ -56,55 +59,121 @@ const ProfilePage: React.FC = () => {
 		githubUrl: "",
 		linkedinUrl: "",
 		customUrl: "",
+		email: "", // Initialize email
 	});
+	const [existingUser, setExistingUser] = useState<any>(null);
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
-	const [previewUrl, setPreviewUrl] = useState<string | null>(null); // Preview URL state
+	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(false);
 	const [isChanged, setIsChanged] = useState(false);
 
-	// Load profile data
+	// Sync user with Sanity
+	useEffect(() => {
+		const syncUserWithSanity = async () => {
+			if (!user?.id) return;
+
+			try {
+				// Check if user exists in Sanity
+				const query = `*[_type == "author" && clerk_id == $clerkId][0]`;
+				const params = { clerkId: user.id };
+				const fetchedUser = await client.fetch(query, params);
+
+				if (fetchedUser) {
+					setExistingUser(fetchedUser);
+				} else {
+					// Create new author using Clerk's username and email
+					const newUser = await client.create({
+						_type: "author",
+						name: user.username || "", // Clerk's username
+						firstName: user.firstName || "First",
+						lastName: user.lastName || "Last",
+						clerk_id: user.id,
+						email: user.primaryEmailAddress?.emailAddress || "", // Store email if desired
+						bio: [
+							{
+								_type: "block",
+								_key: `block-${Date.now()}`,
+								style: "normal",
+								children: [
+									{
+										_type: "span",
+										_key: `span-${Date.now()}`,
+										text: "",
+										marks: [],
+									},
+								],
+							},
+						],
+						github: "",
+						linkedin: "",
+						website: "",
+					});
+					setExistingUser(newUser);
+					toast.success("Account initialized in Sanity.");
+				}
+			} catch (error) {
+				toast.error("Error syncing user with Sanity.");
+				console.error("Sanity sync error:", error);
+			}
+		};
+
+		syncUserWithSanity();
+	}, [user?.id, user?.username, user?.primaryEmailAddress?.emailAddress]); // Added user's email as dependency
+
+	// Load profile data from Sanity
 	useEffect(() => {
 		const loadProfile = async () => {
 			if (!user?.id) return;
 
 			try {
-				const { data, error } = await supabase
-					.from("user_profiles")
-					.select(
-						`
-                            first_name,
-                            last_name, 
-                            bio,
-                            profile_picture,
-                            github,
-                            linkedin,
-                            custom_link
-                        `
-					)
-					.eq("user_id", user.id)
-					.single();
-
-				if (error) throw error;
+				const query = `*[_type == "author" && clerk_id == $clerkId][0]{
+          name,
+          firstName,
+          lastName,
+          bio,
+          image,
+          github,
+          linkedin,
+          website,
+          email // Fetch email if stored in Sanity
+        }`;
+				const params = { clerkId: user.id };
+				const data = await client.fetch(query, params);
 
 				if (data) {
 					setProfile({
-						firstName: data.first_name || "",
-						lastName: data.last_name || "",
-						bio: data.bio || "",
-						profilePicture: data.profile_picture || null,
+						username: data.name || "",
+						firstName: data.firstName || "",
+						lastName: data.lastName || "",
+						bio:
+							Array.isArray(data.bio) && data.bio[0]?.children?.length > 0
+								? data.bio
+										.map((block: any) =>
+											block.children.map((child: any) => child.text).join("")
+										)
+										.join("\n")
+								: "",
+						profilePicture: data.image ? urlFor(data.image).url() : null,
 						githubUrl: data.github || "",
 						linkedinUrl: data.linkedin || "",
-						customUrl: data.custom_link || "",
+						customUrl: data.website || "",
+						email: data.email || user.primaryEmailAddress?.emailAddress || "", // Set email from Sanity or Clerk
 					});
+				} else {
+					// If email is not stored in Sanity, set it from Clerk
+					setProfile((prev) => ({
+						...prev,
+						email: data.email || user.primaryEmailAddress?.emailAddress || "", 
+					}));
 				}
 			} catch (error) {
-				toast.error("Error loading profile");
+				toast.error("Error loading profile from Sanity.");
 				console.error(error);
 			}
 		};
 
 		loadProfile();
-	}, [user?.id]);
+	}, [user?.id, user?.primaryEmailAddress?.emailAddress]);
 
 	// Handle file selection
 	const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,7 +189,7 @@ const ProfilePage: React.FC = () => {
 	};
 
 	// Handle input changes
-	const handleInputChange = (field: keyof Profile, value: string) => {
+	const handleInputChange = (field: keyof Profile, value: string | any[]) => {
 		setProfile((prev) => ({
 			...prev,
 			[field]: value,
@@ -130,7 +199,7 @@ const ProfilePage: React.FC = () => {
 
 	// Handle profile update
 	const handleUpdateProfile = async () => {
-		if (!user?.id) {
+		if (!user?.id || !existingUser) {
 			toast.error("User not authenticated.");
 			return;
 		}
@@ -151,76 +220,58 @@ const ProfilePage: React.FC = () => {
 
 			if (hasUrlErrors) {
 				toast.error("Please enter valid URLs");
+				setIsLoading(false);
 				return;
 			}
 
-			// If a file is selected, upload it
+			let imageAssetId = existingUser.image?.asset?._ref || null;
+
+			// If a file is selected, upload it to Sanity
 			if (selectedFile) {
-				const uploadPath = `public/${user.id}/${selectedFile.name}`; // Keep the upload path as requested
-				console.log("Uploading to user_pfp bucket, path:", uploadPath);
-
-				const { data, error } = await supabase.storage
-					.from("user_pfp")
-					.upload(uploadPath, selectedFile, {
-						upsert: true,
-					});
-
-				if (error) throw error;
-
-				const { data: publicUrlData } = supabase.storage
-					.from("user_pfp")
-					.getPublicUrl(uploadPath);
-
-				const url = publicUrlData.publicUrl;
-
-				if (url) {
-					profile.profilePicture = url;
-					toast.success("Profile picture updated successfully!");
-				} else {
-					toast.error("Failed to retrieve public URL.");
+				try {
+					const asset = await client.assets.upload("image", selectedFile);
+					imageAssetId = asset._id;
+				} catch (uploadError) {
+					throw new Error("Failed to upload image");
 				}
 			}
 
 			// Sanitize profile data
-			const sanitizedProfile = {
-				first_name: profile.firstName || null,
-				last_name: profile.lastName || null,
-				bio: profile.bio || null,
-				profile_picture: profile.profilePicture || null,
-				github: profile.githubUrl || null,
-				linkedin: profile.linkedinUrl || null,
-				custom_link: profile.customUrl || null,
+			const sanitizedProfile: any = {
+				firstName: profile.firstName || "First",
+				lastName: profile.lastName || "Last",
+				bio: [
+					{
+						_type: "block",
+						_key: `block-${Date.now()}`,
+						style: "normal",
+						children: [
+							{
+								_type: "span",
+								_key: `span-${Date.now()}`,
+								text: profile.bio || "",
+								marks: [],
+							},
+						],
+					},
+				],
+				// Only include image if we have an asset
+				...(imageAssetId && {
+					image: {
+						_type: "image",
+						asset: { _type: "reference", _ref: imageAssetId },
+					},
+				}),
+				github: profile.githubUrl || "",
+				linkedin: profile.linkedinUrl || "",
+				website: profile.customUrl || "",
+				// Email is non-editable, ensure it's not modified
 			};
 
-			// Update profile in Supabase
-			const { error } = await supabase
-				.from("user_profiles")
-				.update(sanitizedProfile)
-				.eq("user_id", user.id);
+			// Update profile in Sanity
+			await client.patch(existingUser._id).set(sanitizedProfile).commit();
 
-			if (error) {
-				console.error("Supabase update error:", error);
-				throw error;
-			}
-
-			// Sync with external service
-			const syncSuccess = await syncUserProfile({
-				user_id: user.id,
-				first_name: profile.firstName,
-				last_name: profile.lastName,
-				bio: profile.bio,
-				profile_picture: profile.profilePicture || undefined,
-				github: profile.githubUrl,
-				linkedin: profile.linkedinUrl,
-				custom_link: profile.customUrl,
-			});
-
-			if (!syncSuccess) {
-				toast("Profile updated, but failed to sync with external service.");
-			} else {
-				toast.success("Profile updated successfully!");
-			}
-
+			toast.success("Profile updated successfully!");
 			setIsChanged(false);
 			setSelectedFile(null);
 			setPreviewUrl(null);
@@ -304,6 +355,28 @@ const ProfilePage: React.FC = () => {
 					{/* Basic Info */}
 					<div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
 						<div className="space-y-2">
+							<Label htmlFor="username">Username</Label>
+							<Input
+								id="username"
+								name="username"
+								value={profile.username}
+								readOnly
+								className="h-10 border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-800/50 cursor-not-allowed opacity-70"
+							/>
+						</div>
+
+						<div className="space-y-2">
+							<Label htmlFor="email">Email</Label>
+							<Input
+								id="email"
+								name="email"
+								value={profile.email}
+								readOnly
+								className="h-10 border-zinc-200 dark:border-zinc-800 bg-zinc-100 dark:bg-zinc-800/50 cursor-not-allowed opacity-70"
+							/>
+						</div>
+
+						<div className="space-y-2">
 							<Label htmlFor="firstName">First Name</Label>
 							<Input
 								id="firstName"
@@ -382,7 +455,7 @@ const ProfilePage: React.FC = () => {
 							name="bio"
 							value={profile.bio}
 							onChange={(e) => handleInputChange("bio", e.target.value)}
-							className="min-h-[100px] border-zinc-200 dark:border-zinc-800"
+							className="min-h-[100px] resize-none border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
 							placeholder="Tell us about yourself..."
 						/>
 					</div>
