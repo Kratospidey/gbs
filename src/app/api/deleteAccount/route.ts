@@ -10,7 +10,7 @@ const clerkClient = createClerkClient({
 });
 
 export async function DELETE(request: NextRequest) {
-	// Authenticate the user
+	// Step 1: Get current user ID from Clerk
 	const { userId } = getAuth(request);
 
 	if (!userId) {
@@ -18,47 +18,35 @@ export async function DELETE(request: NextRequest) {
 	}
 
 	try {
-		// Delete Clerk user
-		await clerkClient.users.deleteUser(userId);
-
-		// Fetch the author document from Sanity
-		const author = await sanityClient.fetch(
-			`*[_type == "author" && _id == $userId][0]`,
+		// Step 2: Delete all savedPost documents corresponding to that user ID in Sanity
+		const savedPostsToDelete = await sanityClient.fetch(
+			`*[_type == "savedPost" && user == $userId]{_id}`,
 			{ userId }
 		);
 
-		if (author) {
-			const authorId = author._id;
+		let transaction = sanityClient.transaction();
 
-			// Begin Sanity transaction
-			let transaction = sanityClient.transaction();
+		savedPostsToDelete.forEach((savedPost: { _id: string }) => {
+			transaction = transaction.delete(savedPost._id);
+		});
 
-			// Delete savedPost documents where user matches authorId
-			const savedPostsToDelete = await sanityClient.fetch(
-				`*[_type == "savedPost" && user == $authorId]{_id}`,
-				{ authorId }
-			);
-			savedPostsToDelete.forEach((savedPost: { _id: string }) => {
-				transaction = transaction.delete(savedPost._id);
-			});
+		// Step 3: Delete all posts authored by the user in Sanity
+		const postsToDelete = await sanityClient.fetch(
+			`*[_type == "post" && author._ref == $userId]{_id}`,
+			{ userId }
+		);
 
-			// Delete posts authored by the user
-			const postsToDelete = await sanityClient.fetch(
-				`*[_type == "post" && author._ref == $authorId]{_id}`,
-				{ authorId }
-			);
-			postsToDelete.forEach((post: { _id: string }) => {
-				transaction = transaction.delete(post._id);
-			});
+		postsToDelete.forEach((post: { _id: string }) => {
+			transaction = transaction.delete(post._id);
+		});
 
-			// Delete the author document
-			transaction = transaction.delete(authorId);
+		// Step 4: Delete the author document with the same user ID in Sanity
+		transaction = transaction.delete(userId);
 
-			// Commit the transaction
-			await transaction.commit();
-		}
+		// Commit the transaction in Sanity
+		await transaction.commit();
 
-		// Delete user profile from Supabase
+		// Step 5: Delete the user profile from Supabase
 		const { error: supabaseError } = await supabase
 			.from("user_profiles")
 			.delete()
@@ -67,6 +55,9 @@ export async function DELETE(request: NextRequest) {
 		if (supabaseError) {
 			throw new Error(supabaseError.message);
 		}
+
+		// Step 6: Finally, delete the user itself from Clerk
+		await clerkClient.users.deleteUser(userId);
 
 		return NextResponse.json(
 			{ message: "Account deleted successfully" },
