@@ -109,15 +109,11 @@ export default function SavedPostsPage() {
 
 	if (!savedPosts || !savedPosts.posts?.length) {
 		return (
-			<div className="flex items-center justify-center min-h-screen bg-gray-50">
-				<div className="text-center p-6 bg-white rounded shadow-md">
-					<h2 className="text-2xl font-semibold mb-4">No saved posts found</h2>
-					<p className="text-gray-600">You haven&apos;t saved any posts yet.</p>
-				</div>
+			<div className="flex items-center justify-center min-h-screen">
+				<div className="text-lg text-white-600">No Saved Post Found</div>
 			</div>
 		);
 	}
-
 	return (
 		<div className="container mx-auto px-4 py-8 max-w-7xl">
 			<h1 className="text-3xl font-bold mb-0.01 text-center">

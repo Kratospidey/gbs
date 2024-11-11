@@ -1,4 +1,4 @@
-// app/profile/page.tsx
+// src/app/profile/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import { syncUserProfile } from "@/lib/syncUserProfile";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
@@ -36,7 +36,13 @@ interface Profile {
 	customUrl: string;
 }
 
-const urlSchema = z.string().url().nullable().optional();
+// Updated Zod schema to preprocess empty strings
+const urlSchema = z.preprocess((arg) => {
+	if (typeof arg === "string" && arg.trim() === "") {
+		return undefined;
+	}
+	return arg;
+}, z.string().url().optional());
 
 const ProfilePage: React.FC = () => {
 	const { user, isLoaded } = useUser();
@@ -66,14 +72,14 @@ const ProfilePage: React.FC = () => {
 					.from("user_profiles") // Changed from profiles to user_profiles
 					.select(
 						`
-          first_name,
-          last_name, 
-          bio,
-          profile_picture,
-          github,
-          linkedin,
-          custom_link
-        `
+            first_name,
+            last_name, 
+            bio,
+            profile_picture,
+            github,
+            linkedin,
+            custom_link
+          `
 					)
 					.eq("user_id", user.id)
 					.single();
@@ -122,18 +128,23 @@ const ProfilePage: React.FC = () => {
 		try {
 			const { data, error } = await supabase.storage
 				.from("profile-pictures")
-				.upload(`${user?.id}/${file.name}`, file);
+				.upload(`${user?.id}/${file.name}`, file, {
+					upsert: true, // Overwrite if file exists
+				});
 
 			if (error) throw error;
 
-			const url = supabase.storage
+			const publicUrlResponse = supabase.storage
 				.from("profile-pictures")
-				.getPublicUrl(data.path).data.publicUrl;
+				.getPublicUrl(data.path);
+
+			const url = publicUrlResponse.data.publicUrl;
 
 			handleInputChange("profilePicture", url);
-		} catch (error) {
+			toast.success("Profile picture updated successfully!");
+		} catch (error: any) {
 			toast.error("Error uploading image");
-			console.error(error);
+			console.error("Image Upload Error:", error);
 		} finally {
 			setIsLoading(false);
 		}
@@ -150,11 +161,16 @@ const ProfilePage: React.FC = () => {
 
 	// Handle profile update
 	const handleUpdateProfile = async () => {
-		if (!user?.id) return;
+		if (!user?.id) {
+			toast.error("User not authenticated.");
+			return;
+		}
 
 		setIsLoading(true);
 
 		try {
+			console.log("Starting profile update...");
+
 			// Validate URLs
 			const urlValidation = {
 				githubUrl: urlSchema.safeParse(profile.githubUrl),
@@ -162,45 +178,72 @@ const ProfilePage: React.FC = () => {
 				customUrl: urlSchema.safeParse(profile.customUrl),
 			};
 
+			console.log(
+				"URL Validation Results:",
+				JSON.stringify(urlValidation, null, 2)
+			);
+
 			const hasUrlErrors = Object.values(urlValidation).some(
 				(result) => !result.success
 			);
 
 			if (hasUrlErrors) {
 				toast.error("Please enter valid URLs");
+				console.error("URL validation failed.");
 				return;
 			}
 
-			const { error } = await supabase.from("user_profiles").upsert({
+			// Sanitize profile data: Remove 'updated_at'
+			const sanitizedProfile = {
+				first_name: profile.firstName || null,
+				last_name: profile.lastName || null,
+				bio: profile.bio || null,
+				profile_picture: profile.profilePicture || null,
+				github: profile.githubUrl || null,
+				linkedin: profile.linkedinUrl || null,
+				custom_link: profile.customUrl || null,
+			};
+
+			console.log("Sanitized Profile Data:", sanitizedProfile);
+
+			// Update profile in Supabase using 'update' with 'eq' filter
+			const { error } = await supabase
+				.from("user_profiles")
+				.update(sanitizedProfile)
+				.eq("user_id", user.id); // Ensure we're updating the correct user
+
+			if (error) {
+				console.error("Supabase update error:", error);
+				throw error;
+			}
+
+			console.log("Supabase profile updated successfully.");
+
+			// Optionally sync with another service if necessary
+			const syncSuccess = await syncUserProfile({
 				user_id: user.id,
 				first_name: profile.firstName,
 				last_name: profile.lastName,
 				bio: profile.bio,
-				profile_picture: profile.profilePicture,
-				github: profile.githubUrl,
-				linkedin: profile.linkedinUrl,
-				custom_link: profile.customUrl,
-				updated_at: new Date().toISOString(),
-			});
-
-			if (error) throw error;
-
-			await syncUserProfile({
-				user_id: user.id,
-				first_name: profile.firstName,
-				last_name: profile.lastName,
-				bio: profile.bio,
-				profile_picture: profile.profilePicture || undefined, // Fix null type
+				profile_picture: profile.profilePicture || undefined, // Handle null
 				github: profile.githubUrl,
 				linkedin: profile.linkedinUrl,
 				custom_link: profile.customUrl,
 			});
-			toast.success("Profile updated successfully");
+
+			if (!syncSuccess) {
+				toast.warn(
+					"Profile updated, but failed to sync with external service."
+				);
+			} else {
+				toast.success("Profile updated successfully!");
+			}
+
 			setOriginalProfile(profile);
 			setIsChanged(false);
-		} catch (error) {
-			toast.error("Error updating profile");
-			console.error(error);
+		} catch (error: any) {
+			toast.error(error.message || "Error updating profile");
+			console.error("Error updating profile:", error);
 		} finally {
 			setIsLoading(false);
 		}
@@ -219,6 +262,7 @@ const ProfilePage: React.FC = () => {
 
 	return (
 		<div className="container max-w-4xl mx-auto px-4 sm:px-6 py-6">
+			<ToastContainer />
 			<div className="flex flex-col space-y-2 mb-8">
 				<h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
 					Profile Settings
@@ -285,6 +329,7 @@ const ProfilePage: React.FC = () => {
 							<Label htmlFor="firstName">First Name</Label>
 							<Input
 								id="firstName"
+								name="firstName"
 								value={profile.firstName}
 								onChange={(e) => handleInputChange("firstName", e.target.value)}
 								className="h-10 border-zinc-200 dark:border-zinc-800"
@@ -295,6 +340,7 @@ const ProfilePage: React.FC = () => {
 							<Label htmlFor="lastName">Last Name</Label>
 							<Input
 								id="lastName"
+								name="lastName"
 								value={profile.lastName}
 								onChange={(e) => handleInputChange("lastName", e.target.value)}
 								className="h-10 border-zinc-200 dark:border-zinc-800"
@@ -310,6 +356,8 @@ const ProfilePage: React.FC = () => {
 							<Label htmlFor="githubUrl">GitHub URL</Label>
 							<Input
 								id="githubUrl"
+								name="githubUrl"
+								type="url"
 								value={profile.githubUrl}
 								onChange={(e) => handleInputChange("githubUrl", e.target.value)}
 								className="h-10 border-zinc-200 dark:border-zinc-800"
@@ -321,6 +369,8 @@ const ProfilePage: React.FC = () => {
 							<Label htmlFor="linkedinUrl">LinkedIn URL</Label>
 							<Input
 								id="linkedinUrl"
+								name="linkedinUrl"
+								type="url"
 								value={profile.linkedinUrl}
 								onChange={(e) =>
 									handleInputChange("linkedinUrl", e.target.value)
@@ -334,6 +384,8 @@ const ProfilePage: React.FC = () => {
 							<Label htmlFor="customUrl">Personal Website</Label>
 							<Input
 								id="customUrl"
+								name="customUrl"
+								type="url"
 								value={profile.customUrl}
 								onChange={(e) => handleInputChange("customUrl", e.target.value)}
 								className="h-10 border-zinc-200 dark:border-zinc-800"
@@ -349,6 +401,7 @@ const ProfilePage: React.FC = () => {
 						<Label htmlFor="bio">Bio</Label>
 						<Textarea
 							id="bio"
+							name="bio"
 							value={profile.bio}
 							onChange={(e) => handleInputChange("bio", e.target.value)}
 							className="min-h-[100px] border-zinc-200 dark:border-zinc-800"
