@@ -88,9 +88,9 @@ const HomePage: React.FC = () => {
 	};
 
 	return (
-		<div className="min-h-screen">
+		<div className="min-h-screen px-4 sm:px-6 lg:px-8">
 			<div className="max-w-7xl mx-auto p-6">
-				<h1 className="text-4xl font-bold mb-6 text-zinc-900 dark:text-zinc-50">
+				<h1 className="text-4xl font-bold mb-6 text-zinc-900 dark:text-zinc-50 text-center">
 					All Published Posts
 				</h1>
 
@@ -131,7 +131,7 @@ const HomePage: React.FC = () => {
 					{/* Filter by Tags */}
 					<form
 						onSubmit={handleTagSubmit}
-						className="flex items-center space-x-2 backdrop-blur-xl rounded-md p-2 bg-white/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800"
+						className="flex items-center space-x-2 backdrop-blur-xl rounded-md p-2 bg-white/50 dark:bg-zinc-950/50 border border-zinc-200 dark:border-zinc-800 w-full sm:w-auto"
 					>
 						<label
 							htmlFor="tags"
@@ -146,7 +146,7 @@ const HomePage: React.FC = () => {
 								placeholder="e.g., react, nextjs"
 								value={tagFilter}
 								onChange={handleTagFilterChange}
-								className="w-[200px] bg-white/50 dark:bg-zinc-950/50 border-zinc-200 dark:border-zinc-800 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 backdrop-blur-xl"
+								className="w-full sm:w-[200px] bg-white/50 dark:bg-zinc-950/50 border-zinc-200 dark:border-zinc-800 placeholder:text-zinc-400 dark:placeholder:text-zinc-500 backdrop-blur-xl"
 							/>
 							<Button
 								type="submit"
@@ -173,7 +173,7 @@ const HomePage: React.FC = () => {
 
 				{/* Posts List */}
 				{!isLoading && !error && (
-					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 lg:gap-8">
 						{posts.map((post) => (
 							<ThreeDPostCard key={post._id} post={post} />
 						))}
