@@ -81,12 +81,11 @@ const ThreeDPostCard: React.FC<{ post: Post }> = ({ post }) => {
 					<CardItem translateZ={20} className="mt-4">
 						<div className="flex flex-wrap gap-2">
 							{post.tags.map((tag) => (
-								<span
-									key={tag}
-									className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-800 text-zinc-200"
-								>
-									{tag}
-								</span>
+								<Link href={`/tag/${tag}`} key={tag}>
+									<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-800 text-zinc-200 hover:bg-zinc-700 transition-colors cursor-pointer">
+										{tag}
+									</span>
+								</Link>
 							))}
 						</div>
 					</CardItem>

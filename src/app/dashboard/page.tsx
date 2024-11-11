@@ -244,33 +244,32 @@ const DashboardPage: React.FC = () => {
 			</div>
 
 			{/* Post Cards */}
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-40">
+			<div className="flex flex-wrap -mx-1 gap-3 justify-center">
 				{isLoading ? (
-					<p className="col-span-full text-center text-zinc-300 mt-20">
-						{" "}
-						{/* added styling */}
-						Loading...
-					</p>
+					<p className="w-full text-center text-zinc-300 mt-20">Loading...</p>
 				) : posts.length > 0 ? (
 					posts.map((post: Post) => (
-						<DashboardPostCard
-							key={post._id}
-							post={{
-								_id: post._id,
-								title: post.title,
-								slug: post.slug.current,
-								publishedAt: post.publishedAt,
-								mainImageUrl: post.mainImage?.asset?.url,
-								status: post.status,
-								tags: post.tags,
-							}}
-							onDelete={(id) => handleDelete(id, post.mainImage?.asset?.url)}
-							onArchive={handleArchive}
-							onUnarchive={handleUnarchive}
-						/>
+						<div key={post._id}>
+							<DashboardPostCard
+								post={{
+									_id: post._id,
+									title: post.title,
+									slug: post.slug.current,
+									publishedAt: post.publishedAt,
+									mainImageUrl: post.mainImage?.asset?.url,
+									status: post.status,
+									tags: post.tags,
+								}}
+								onDelete={(id) => handleDelete(id, post.mainImage?.asset?.url)}
+								onArchive={handleArchive}
+								onUnarchive={handleUnarchive}
+							/>
+						</div>
 					))
 				) : (
-					<p className="text-center text-gray-400">{noPostsMessages[filter]}</p>
+					<p className="w-full text-center text-gray-400">
+						{noPostsMessages[filter]}
+					</p>
 				)}
 			</div>
 		</div>

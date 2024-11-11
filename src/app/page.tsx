@@ -170,9 +170,12 @@ const HomePage: React.FC = () => {
 
 				{/* Posts List */}
 				{!isLoading && !error && (
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0.1 md:gap-2 lg:gap-3">
+					<div className="flex flex-wrap gap-3 justify-center">
 						{posts.map((post) => (
-							<ThreeDPostCard key={post._id} post={post} />
+							<div key={post._id}>
+								<ThreeDPostCard post={post} />
+							
+							</div>
 						))}
 					</div>
 				)}

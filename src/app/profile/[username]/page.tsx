@@ -210,9 +210,11 @@ const UserProfilePage = () => {
 							No published posts yet.
 						</p>
 					) : (
-						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3 lg:gap-4 place-items-center">
+						<div className="flex flex-wrap -mx-1 gap-3 justify-center">
 							{posts.map((post) => (
-								<ProfilePostCard key={post._id} post={post} />
+								<div key={post._id}>
+									<ProfilePostCard post={post} />
+								</div>
 							))}
 						</div>
 					)}
