@@ -2,15 +2,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-	ClerkProvider,
-	SignInButton,
-	SignedIn,
-	SignedOut,
-	UserButton,
-} from "@clerk/nextjs";
+import { ClerkProvider, SignedIn, SignedOut } from "@clerk/nextjs";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { GridCursorAnimation } from "@/components/GridCursorAnimation";
 
 interface RootLayoutClientProps {
 	children: React.ReactNode;
@@ -53,10 +48,15 @@ export default function RootLayoutClient({ children }: RootLayoutClientProps) {
 						<div className="absolute inset-0 bg-white dark:bg-black [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
 					</div>
 
+					{/* Cursor Animation Overlay */}
+					<GridCursorAnimation
+						gridSize={32} // Adjust based on your grid configuration
+						cellSize={32} // Adjust based on your grid cell size
+						highlightRadius={150} // Adjust the radius for highlighting
+					/>
+
 					{/* Content */}
-					<div className="relative">
-						{children}
-					</div>
+					<div className="relative z-0">{children}</div>
 				</div>
 			</ThemeProvider>
 		</ClerkProvider>
