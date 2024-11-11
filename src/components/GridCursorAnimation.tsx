@@ -1,17 +1,20 @@
 // src/components/GridCursorAnimation.tsx
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
+import throttle from "lodash.throttle";
 
 interface GridCursorAnimationProps {
-	gridSize: number; // Number of grid cells horizontally and vertically
+	gridSizeX: number; // Number of grid cells horizontally
+	gridSizeY: number; // Number of grid cells vertically
 	cellSize: number; // Size of each grid cell in pixels
 	highlightRadius: number; // Radius in pixels to determine which cells to highlight
 }
 
 export const GridCursorAnimation: React.FC<GridCursorAnimationProps> = ({
-	gridSize,
+	gridSizeX,
+	gridSizeY,
 	cellSize,
 	highlightRadius,
 }) => {
@@ -19,9 +22,13 @@ export const GridCursorAnimation: React.FC<GridCursorAnimationProps> = ({
 		null
 	);
 
-	const handleMouseMove = useCallback((e: MouseEvent) => {
-		setCursorPos({ x: e.clientX, y: e.clientY });
-	}, []);
+	// Throttled mouse move handler for performance
+	const handleMouseMove = useCallback(
+		throttle((e: MouseEvent) => {
+			setCursorPos({ x: e.clientX, y: e.clientY });
+		}, 50), // Throttle delay in ms
+		[]
+	);
 
 	const handleMouseLeave = useCallback(() => {
 		setCursorPos(null);
@@ -36,15 +43,18 @@ export const GridCursorAnimation: React.FC<GridCursorAnimationProps> = ({
 		};
 	}, [handleMouseMove, handleMouseLeave]);
 
-	// Calculate grid cells
-	const cells = [];
-	for (let i = 0; i < gridSize; i++) {
-		for (let j = 0; j < gridSize; j++) {
-			const x = i * cellSize + cellSize / 2;
-			const y = j * cellSize + cellSize / 2;
-			cells.push({ i, j, x, y });
+	// Memoize cells to optimize performance
+	const cells = useMemo(() => {
+		const tempCells = [];
+		for (let i = 0; i < gridSizeX; i++) {
+			for (let j = 0; j < gridSizeY; j++) {
+				const x = i * cellSize + cellSize / 2;
+				const y = j * cellSize + cellSize / 2;
+				tempCells.push({ i, j, x, y });
+			}
 		}
-	}
+		return tempCells;
+	}, [gridSizeX, gridSizeY, cellSize]);
 
 	return (
 		<div
