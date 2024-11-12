@@ -14,18 +14,18 @@ export async function GET(
 
 		// Step 1: Query Sanity to find the author by username
 		const authorQuery = groq`*[_type == "author" && name == $username][0]{
-			clerk_id,
-			_id,
-			name,
-			firstName,
-			lastName,
-			bio,
-			image,
-			"github": coalesce(github, ""),    // Add coalesce to handle null/undefined
-			"linkedin": coalesce(linkedin, ""), // Add coalesce to handle null/undefined
-			"website": coalesce(website, ""),   // Add coalesce to handle null/undefined
-			email
-		  }`;
+            clerk_id,
+            _id,
+            name,
+            firstName,
+            lastName,
+            bio,
+            image,
+            "github": coalesce(github, ""),    // Add coalesce to handle null/undefined
+            "linkedin": coalesce(linkedin, ""), // Add coalesce to handle null/undefined
+            "website": coalesce(website, ""),   // Add coalesce to handle null/undefined
+            email
+          }`;
 		const author = await client.fetch(authorQuery, {
 			username: params.username,
 		});
@@ -36,6 +36,10 @@ export async function GET(
 		}
 
 		console.log("API: Found author in Sanity:", author);
+
+		// Debug: Check bio and image
+		console.log("API: Author bio:", author.bio);
+		console.log("API: Author image:", author.image);
 
 		// Step 2: Use clerk_id to fetch the Clerk user
 		const clerkInstance =
@@ -58,20 +62,20 @@ export async function GET(
 
 		// Step 3: Fetch published posts by author using corrected GROQ query
 		const postsQuery = groq`*[_type == "post" && author._ref == $authorId && status == "published"]{
-      _id,
-      title,
-      "slug": slug.current,
-      publishedAt,
-      "mainImageUrl": mainImage.asset->url,
-      status,
-      tags, // Corrected field
-      author->{
-        username,
-        clerk_id,
-        firstName,
-        lastName
-      }
-    }`;
+          _id,
+          title,
+          "slug": slug.current,
+          publishedAt,
+          "mainImageUrl": mainImage.asset->url,
+          status,
+          tags, // Corrected field
+          author->{
+            username,
+            clerk_id,
+            firstName,
+            lastName
+          }
+        }`;
 		const posts = await client.fetch(postsQuery, { authorId: author._id });
 
 		console.log("API: Fetched posts:", posts.length);
@@ -104,15 +108,17 @@ export async function GET(
 							block.children.map((child: any) => child.text).join("")
 						)
 						.join("\n")
-				: author.bio,
-			profilePicture: author.image ? urlFor(author.image).url() : null,
+				: "",
+			profilePicture: author.image
+				? urlFor(author.image).url()
+				: "/default-avatar.png",
 			github: author.github || "",
 			linkedin: author.linkedin || "",
 			website: author.website || "",
 			email: email,
 		};
 
-		console.log("API: User data prepared successfully.");
+		console.log("API: User data prepared successfully:", user);
 
 		return NextResponse.json(
 			{ user: user, posts: enrichedPosts },
