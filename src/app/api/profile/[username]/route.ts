@@ -2,8 +2,6 @@
 
 import { NextResponse } from "next/server";
 import client from "@/lib/sanityClient"; // Sanity client
-import { clerkClient } from "@clerk/nextjs/server"; // Clerk client
-import { urlFor } from "@/lib/urlFor"; // URL builder for Sanity images
 import groq from "groq"; // GROQ tagged template
 
 export async function GET(
@@ -14,18 +12,18 @@ export async function GET(
 		const { username } = params;
 		console.log("API: Fetching user", username);
 
-		// **Fix: Use 'name' instead of 'username' if 'name' is the correct field for username in Sanity**
 		const authorQuery = groq`*[_type == "author" && name == $username][0]{
       clerk_id,
       _id,
+      _updatedAt,
       name, // Username field
       firstName,
       lastName,
       bio,
-      image,
-      "github": coalesce(github, ""),    // Handle null/undefined
-      "linkedin": coalesce(linkedin, ""), // Handle null/undefined
-      "website": coalesce(website, ""),   // Handle null/undefined
+      "imageUrl": image.asset->url,
+      "github": coalesce(github, ""),
+      "linkedin": coalesce(linkedin, ""),
+      "website": coalesce(website, ""),
       email
     }`;
 
@@ -38,30 +36,9 @@ export async function GET(
 
 		console.log("API: Found author in Sanity:", author);
 
-		// Debug: Check bio and image
-		console.log("API: Author bio:", author.bio);
-		console.log("API: Author image:", author.image);
+		const email = author.email || "";
 
-		// Step 2: Use clerk_id to fetch the Clerk user
-		const clerkInstance =
-			typeof clerkClient === "function" ? await clerkClient() : clerkClient;
-
-		const clerkUser = await clerkInstance.users.getUser(author.clerk_id);
-
-		if (!clerkUser) {
-			console.log("API: Clerk user not found with clerk_id:", author.clerk_id);
-			return NextResponse.json(
-				{ error: "User not found in Clerk" },
-				{ status: 404 }
-			);
-		}
-
-		const email =
-			clerkUser.emailAddresses && clerkUser.emailAddresses.length > 0
-				? clerkUser.emailAddresses[0].emailAddress
-				: "";
-
-		// Step 3: Fetch published posts by author using corrected GROQ query
+		// Fetch published posts by author
 		const postsQuery = groq`*[_type == "post" && author._ref == $authorId && status == "published"]{
       _id,
       title,
@@ -69,7 +46,7 @@ export async function GET(
       publishedAt,
       "mainImageUrl": mainImage.asset->url,
       status,
-      tags, // Ensure 'tags' field exists
+      tags,
       author->{
         name,
         clerk_id,
@@ -82,7 +59,7 @@ export async function GET(
 
 		console.log("API: Fetched posts:", posts.length);
 
-		// Step 4: Enrich posts with author information
+		// Enrich posts with author information
 		const enrichedPosts = posts.map((post: any) => ({
 			_id: post._id,
 			title: post.title,
@@ -99,7 +76,7 @@ export async function GET(
 			},
 		}));
 
-		// Step 5: Prepare user data including email
+		// Prepare user data including email
 		const user = {
 			name: author.name,
 			firstName: author.firstName,
@@ -111,8 +88,8 @@ export async function GET(
 						)
 						.join("\n")
 				: "",
-			profilePicture: author.image
-				? urlFor(author.image).url()
+			profilePicture: author.imageUrl
+				? `${author.imageUrl}?ver=${author._updatedAt}`
 				: "/default-avatar.png",
 			github: author.github || "",
 			linkedin: author.linkedin || "",
@@ -124,7 +101,12 @@ export async function GET(
 
 		return NextResponse.json(
 			{ user: user, posts: enrichedPosts },
-			{ status: 200 }
+			{
+				status: 200,
+				headers: {
+					"Cache-Control": "no-store", // Prevent caching of the response
+				},
+			}
 		);
 	} catch (error: any) {
 		console.error("API: Error fetching profile data:", error);
