@@ -11,15 +11,14 @@ export async function GET(
 	{ params }: { params: { username: string } }
 ) {
 	try {
-		console.log("API: Fetching user", params.username);
+		const { username } = params;
+		console.log("API: Fetching user", username);
 
-		// **Fix: Correct the field used for username matching**
-		// Change 'name' to 'username' assuming 'username' is the correct field in Sanity
-		const authorQuery = groq`*[_type == "author" && username == $username][0]{
+		// **Fix: Use 'name' instead of 'username' if 'name' is the correct field for username in Sanity**
+		const authorQuery = groq`*[_type == "author" && name == $username][0]{
       clerk_id,
       _id,
-      username, // Include username if available
-      name,
+      name, // Username field
       firstName,
       lastName,
       bio,
@@ -30,9 +29,7 @@ export async function GET(
       email
     }`;
 
-		const author = await client.fetch(authorQuery, {
-			username: params.username,
-		});
+		const author = await client.fetch(authorQuery, { username });
 
 		if (!author || !author.clerk_id) {
 			console.log("API: Author not found in Sanity or clerk_id missing.");
@@ -74,7 +71,7 @@ export async function GET(
       status,
       tags, // Ensure 'tags' field exists
       author->{
-        username,
+        name,
         clerk_id,
         firstName,
         lastName
@@ -95,7 +92,7 @@ export async function GET(
 			status: post.status,
 			tags: post.tags || [],
 			author: {
-				username: post.author?.username || params.username,
+				name: post.author?.name || username,
 				clerk_id: post.author?.clerk_id || "",
 				firstName: post.author?.firstName || "",
 				lastName: post.author?.lastName || "",
