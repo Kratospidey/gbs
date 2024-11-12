@@ -82,13 +82,14 @@ const ProfilePage: React.FC = () => {
 					setExistingUser(fetchedUser);
 				} else {
 					// Create new author using Clerk's username and email
-					const newUser = await client.create({
+					const newUser = await client.createIfNotExists({
+						_id: `clerkId-${user.id}`, // Unique _id to prevent duplicates
 						_type: "author",
-						name: user.username || "", // Clerk's username
+						name: user.username || "",
 						firstName: user.firstName || "First",
 						lastName: user.lastName || "Last",
 						clerk_id: user.id,
-						email: user.primaryEmailAddress?.emailAddress || "", // Store email if desired
+						email: user.primaryEmailAddress?.emailAddress || "",
 						bio: [
 							{
 								_type: "block",
@@ -118,7 +119,7 @@ const ProfilePage: React.FC = () => {
 		};
 
 		syncUserWithSanity();
-	}, [user?.id, user?.username, user?.primaryEmailAddress?.emailAddress]); // Added user's email as dependency
+	}, [user?.id]); // Only depend on user ID
 
 	// Load profile data from Sanity
 	useEffect(() => {
@@ -127,16 +128,16 @@ const ProfilePage: React.FC = () => {
 
 			try {
 				const query = `*[_type == "author" && clerk_id == $clerkId][0]{
-          name,
-          firstName,
-          lastName,
-          bio,
-          image,
-          github,
-          linkedin,
-          website,
-          email // Fetch email if stored in Sanity
-        }`;
+		  name,
+		  firstName,
+		  lastName,
+		  bio,
+		  image,
+		  github,
+		  linkedin,
+		  website,
+		  email // Fetch email if stored in Sanity
+		}`;
 				const params = { clerkId: user.id };
 				const data = await client.fetch(query, params);
 
@@ -160,10 +161,10 @@ const ProfilePage: React.FC = () => {
 						email: data.email || user.primaryEmailAddress?.emailAddress || "", // Set email from Sanity or Clerk
 					});
 				} else {
-					// If email is not stored in Sanity, set it from Clerk
+					// Set email from Clerk since no data exists in Sanity
 					setProfile((prev) => ({
 						...prev,
-						email: data.email || user.primaryEmailAddress?.emailAddress || "", 
+						email: user.primaryEmailAddress?.emailAddress || "",
 					}));
 				}
 			} catch (error) {
@@ -173,7 +174,7 @@ const ProfilePage: React.FC = () => {
 		};
 
 		loadProfile();
-	}, [user?.id, user?.primaryEmailAddress?.emailAddress]);
+	}, [user?.id]); // Only depend on user ID
 
 	// Handle file selection
 	const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
