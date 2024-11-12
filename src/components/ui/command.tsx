@@ -1,3 +1,5 @@
+// src/components/ui/command.tsx
+
 "use client";
 
 import * as React from "react";
@@ -7,6 +9,9 @@ import { Search } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Inter } from "next/font/google"; // Import Inter font
+
+const inter = Inter({ subsets: ["latin"] }); // Initialize Inter font
 
 const Command = React.forwardRef<
 	React.ElementRef<typeof CommandPrimitive>,
@@ -15,6 +20,7 @@ const Command = React.forwardRef<
 	<CommandPrimitive
 		ref={ref}
 		className={cn(
+			inter.className, // Apply Inter font class name
 			"flex flex-col h-full w-full overflow-hidden rounded-xl bg-zinc-900/70 text-zinc-100 backdrop-blur-lg",
 			className
 		)}
@@ -26,7 +32,12 @@ Command.displayName = CommandPrimitive.displayName;
 const CommandDialog = ({ children, ...props }: DialogProps) => {
 	return (
 		<Dialog {...props}>
-			<DialogContent className="p-0 shadow-2xl rounded-xl bg-zinc-900/75 backdrop-blur-lg border border-zinc-800">
+			<DialogContent
+				className={cn(
+					inter.className, // Apply Inter font class name
+					"p-0 shadow-2xl rounded-xl bg-zinc-900/75 backdrop-blur-lg border border-zinc-800"
+				)}
+			>
 				<Command>{children}</Command>
 			</DialogContent>
 		</Dialog>
@@ -42,6 +53,7 @@ const CommandInput = React.forwardRef<
 		<CommandPrimitive.Input
 			ref={ref}
 			className={cn(
+				inter.className, // Apply Inter font class name
 				"flex-1 bg-transparent text-base text-zinc-100 placeholder-zinc-500 focus:outline-none",
 				className
 			)}
@@ -59,6 +71,7 @@ const CommandList = React.forwardRef<
 	<CommandPrimitive.List
 		ref={ref}
 		className={cn(
+			inter.className, // Apply Inter font class name
 			"flex-1 max-h-80 overflow-y-auto px-5 py-3 space-y-2",
 			className
 		)}
@@ -73,7 +86,11 @@ const CommandEmpty = React.forwardRef<
 >(({ className, ...props }, ref) => (
 	<CommandPrimitive.Empty
 		ref={ref}
-		className={cn("py-10 text-center text-sm text-zinc-400", className)}
+		className={cn(
+			inter.className, // Apply Inter font class name
+			"py-10 text-center text-sm text-zinc-400",
+			className
+		)}
 		{...props}
 	/>
 ));
@@ -85,7 +102,7 @@ const CommandGroup = React.forwardRef<
 >(({ className, ...props }, ref) => (
 	<CommandPrimitive.Group
 		ref={ref}
-		className={cn("space-y-1", className)}
+		className={cn(inter.className, "space-y-1", className)} // Apply Inter font class name
 		{...props}
 	/>
 ));
@@ -110,6 +127,7 @@ const CommandItem = React.forwardRef<
 	<CommandPrimitive.Item
 		ref={ref}
 		className={cn(
+			inter.className, // Apply Inter font class name
 			"relative flex items-center px-4 py-3 text-base text-zinc-100 cursor-pointer select-none rounded-md hover:bg-zinc-800 focus:bg-zinc-800",
 			"data-[selected=true]:bg-zinc-800 data-[selected=true]:text-zinc-100",
 			className
@@ -127,7 +145,11 @@ const CommandShortcut = ({
 }: React.HTMLAttributes<HTMLSpanElement>) => {
 	return (
 		<span
-			className={cn("ml-auto text-sm text-zinc-500", className)}
+			className={cn(
+				inter.className, // Apply Inter font class name
+				"ml-auto text-sm text-zinc-500",
+				className
+			)}
 			{...props}
 		/>
 	);
