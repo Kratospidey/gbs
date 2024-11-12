@@ -249,7 +249,7 @@ const DashboardPage: React.FC = () => {
 						</div>
 					))
 				) : (
-					<p className="w-full text-center text-gray-400">
+					<p className="w-full text-center text-white-400 mt-40">
 						{noPostsMessages[filter]}
 					</p>
 				)}
