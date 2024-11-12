@@ -1,4 +1,3 @@
-// src/app/RootLayoutClient.tsx
 "use client";
 
 import { useEffect, useState } from "react";
