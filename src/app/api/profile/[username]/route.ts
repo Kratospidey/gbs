@@ -1,4 +1,5 @@
 // src/app/api/profile/[username]/route.ts
+
 import { NextResponse } from "next/server";
 import client from "@/lib/sanityClient"; // Sanity client
 import { clerkClient } from "@clerk/nextjs/server"; // Clerk client
@@ -12,20 +13,23 @@ export async function GET(
 	try {
 		console.log("API: Fetching user", params.username);
 
-		// Step 1: Query Sanity to find the author by username
-		const authorQuery = groq`*[_type == "author" && name == $username][0]{
-            clerk_id,
-            _id,
-            name,
-            firstName,
-            lastName,
-            bio,
-            image,
-            "github": coalesce(github, ""),    // Add coalesce to handle null/undefined
-            "linkedin": coalesce(linkedin, ""), // Add coalesce to handle null/undefined
-            "website": coalesce(website, ""),   // Add coalesce to handle null/undefined
-            email
-          }`;
+		// **Fix: Correct the field used for username matching**
+		// Change 'name' to 'username' assuming 'username' is the correct field in Sanity
+		const authorQuery = groq`*[_type == "author" && username == $username][0]{
+      clerk_id,
+      _id,
+      username, // Include username if available
+      name,
+      firstName,
+      lastName,
+      bio,
+      image,
+      "github": coalesce(github, ""),    // Handle null/undefined
+      "linkedin": coalesce(linkedin, ""), // Handle null/undefined
+      "website": coalesce(website, ""),   // Handle null/undefined
+      email
+    }`;
+
 		const author = await client.fetch(authorQuery, {
 			username: params.username,
 		});
@@ -62,20 +66,21 @@ export async function GET(
 
 		// Step 3: Fetch published posts by author using corrected GROQ query
 		const postsQuery = groq`*[_type == "post" && author._ref == $authorId && status == "published"]{
-          _id,
-          title,
-          "slug": slug.current,
-          publishedAt,
-          "mainImageUrl": mainImage.asset->url,
-          status,
-          tags, // Corrected field
-          author->{
-            username,
-            clerk_id,
-            firstName,
-            lastName
-          }
-        }`;
+      _id,
+      title,
+      "slug": slug.current,
+      publishedAt,
+      "mainImageUrl": mainImage.asset->url,
+      status,
+      tags, // Ensure 'tags' field exists
+      author->{
+        username,
+        clerk_id,
+        firstName,
+        lastName
+      }
+    }`;
+
 		const posts = await client.fetch(postsQuery, { authorId: author._id });
 
 		console.log("API: Fetched posts:", posts.length);
@@ -91,7 +96,7 @@ export async function GET(
 			tags: post.tags || [],
 			author: {
 				username: post.author?.username || params.username,
-				clerk_id: post.author?.clerk_id,
+				clerk_id: post.author?.clerk_id || "",
 				firstName: post.author?.firstName || "",
 				lastName: post.author?.lastName || "",
 			},
