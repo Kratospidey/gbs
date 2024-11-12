@@ -19,6 +19,7 @@ import Giscus from "@giscus/react";
 import { TracingBeam } from "@/components/ui/tracing-beam";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
+import remarkGfm from "remark-gfm";
 
 interface Post {
 	_id: string;
@@ -352,21 +353,49 @@ const PostDetailPage = () => {
 				{/* Post Content */}
 				<div className="prose dark:prose-invert max-w-none">
 					<ReactMarkdown
-						className="prose dark:prose-invert"
+						remarkPlugins={[remarkGfm]}
+						className="prose dark:prose-invert prose-zinc max-w-none"
 						components={{
 							h1: ({ node, ...props }) => (
-								<h1 className="text-3xl font-bold mt-8 mb-4" {...props} />
+								<h1
+									className="text-3xl font-bold mt-8 mb-4 text-zinc-900 dark:text-zinc-100"
+									{...props}
+								/>
 							),
 							h2: ({ node, ...props }) => (
-								<h2 className="text-2xl font-bold mt-6 mb-3" {...props} />
+								<h2
+									className="text-2xl font-bold mt-6 mb-3 text-zinc-800 dark:text-zinc-200"
+									{...props}
+								/>
 							),
-							p: ({ node, ...props }) => <p className="my-4" {...props} />,
+							p: ({ node, ...props }) => (
+								<p
+									className="my-4 text-zinc-700 dark:text-zinc-300"
+									{...props}
+								/>
+							),
 							a: ({ node, ...props }) => (
-								<a className="text-blue-500 hover:underline" {...props} />
+								<a
+									className="text-zinc-900 dark:text-zinc-100 underline decoration-zinc-400 dark:decoration-zinc-600 hover:decoration-zinc-600 dark:hover:decoration-zinc-400 transition-all"
+									{...props}
+								/>
 							),
 							code: ({ node, ...props }) => (
 								<code
-									className="bg-gray-100 dark:bg-gray-800 rounded px-1"
+									className="bg-zinc-100 dark:bg-zinc-800 rounded px-1"
+									{...props}
+								/>
+							),
+							ul: ({ node, ...props }) => (
+								<ul className="list-disc list-inside ml-5" {...props} />
+							),
+							ol: ({ node, ...props }) => (
+								<ol className="list-decimal list-inside ml-5" {...props} />
+							),
+							li: ({ node, ...props }) => <li className="my-1" {...props} />,
+							blockquote: ({ node, ...props }) => (
+								<blockquote
+									className="border-l-4 border-zinc-300 dark:border-zinc-700 pl-4 italic text-zinc-600 dark:text-zinc-400"
 									{...props}
 								/>
 							),
@@ -468,6 +497,7 @@ const PostDetailPage = () => {
 					{/* Post Content */}
 					<div className="prose dark:prose-invert prose-zinc max-w-none">
 						<ReactMarkdown
+							remarkPlugins={[remarkGfm]}
 							className="prose dark:prose-invert prose-zinc"
 							components={{
 								h1: ({ node, ...props }) => (

@@ -71,6 +71,7 @@
 		"react-quill": "^2.0.0",
 		"react-toastify": "^10.0.6",
 		"remark": "^15.0.1",
+		"remark-gfm": "^4.0.0",
 		"remark-html": "^16.0.1",
 		"sanity": "^3.56.0",
 		"sanity-plugin-markdown": "^5.0.0",
