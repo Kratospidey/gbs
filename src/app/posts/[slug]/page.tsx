@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowUp, Clock, Calendar, Share2, Check } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { FaBookmark } from "react-icons/fa";
-import { toast } from "react-hot-toast";
 import Link from "next/link";
 import { Tag } from "@/components/Tag";
 import { useUser } from "@clerk/nextjs";
@@ -20,6 +19,7 @@ import { TracingBeam } from "@/components/ui/tracing-beam";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import remarkGfm from "remark-gfm";
+import { useToast } from "@/components/hooks/use-toast";
 
 interface Post {
 	_id: string;
@@ -74,6 +74,8 @@ const PostDetailPage = () => {
 	// Add a state for error handling
 	const [fetchError, setFetchError] = useState<string | null>(null);
 
+	const { toast } = useToast();
+
 	useEffect(() => {
 		const fetchPostAndSaveStatus = async () => {
 			try {
@@ -104,7 +106,11 @@ const PostDetailPage = () => {
 				);
 
 				if (!data) {
-					toast.error("Post not found");
+					toast({
+						title: "Error",
+						description: "Post not found",
+						variant: "destructive",
+					});
 					router.push("/");
 					return;
 				}
@@ -114,7 +120,11 @@ const PostDetailPage = () => {
 				}
 
 				if (data.status !== "published") {
-					toast.error("This post is not available.");
+					toast({
+						title: "Error",
+						description: "This post is not available.",
+						variant: "destructive",
+					});
 					router.push("/");
 					return;
 				}
@@ -144,18 +154,26 @@ const PostDetailPage = () => {
 		if (slug) {
 			fetchPostAndSaveStatus();
 		}
-	}, [slug, user?.id, isSaved, user, router]);
+	}, [slug, user?.id, isSaved, user, router, toast]);
 
 	const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
 	const addToList = async () => {
 		if (!user) {
-			toast.error("Please sign in to save posts");
+			toast({
+				title: "Error",
+				description: "Please sign in to save posts",
+				variant: "destructive",
+			});
 			return;
 		}
 
 		if (!post) {
-			toast.error("Post not found");
+			toast({
+				title: "Error",
+				description: "Post not found",
+				variant: "destructive",
+			});
 			return;
 		}
 
@@ -179,7 +197,11 @@ const PostDetailPage = () => {
 						.commit();
 
 					setIsSaved(false);
-					toast.success("Removed from your saved posts!");
+					toast({
+						title: "Success",
+						description: "Removed from your saved posts!",
+						variant: "default",
+					});
 				} else {
 					await client
 						.patch(savedPostDoc._id)
@@ -196,7 +218,11 @@ const PostDetailPage = () => {
 						.commit();
 
 					setIsSaved(true);
-					toast.success("Added to your saved posts!");
+					toast({
+						title: "Success",
+						description: "Added to your saved posts!",
+						variant: "default",
+					});
 				}
 			} else {
 				await client.create({
@@ -215,17 +241,29 @@ const PostDetailPage = () => {
 				});
 
 				setIsSaved(true);
-				toast.success("Added to your saved posts!");
+				toast({
+					title: "Success",
+					description: "Added to your saved posts!",
+					variant: "default",
+				});
 			}
 		} catch (error) {
 			console.error("Error saving post:", error);
-			toast.error("Failed to save post");
+			toast({
+				title: "Error",
+				description: "Failed to save post",
+				variant: "destructive",
+			});
 		}
 	};
 
 	const sharePost = () => {
 		navigator.clipboard.writeText(window.location.href);
-		toast.success("Link copied to clipboard!");
+		toast({
+			title: "Success",
+			description: "Link copied to clipboard!",
+			variant: "default",
+		});
 		setIsShared(true);
 		setTimeout(() => {
 			setIsShared(false);
@@ -351,10 +389,10 @@ const PostDetailPage = () => {
 				</div>
 
 				{/* Post Content */}
-				<div className="prose dark:prose-invert max-w-none">
+				<div className="prose dark:prose-invert prose-zinc max-w-none">
 					<ReactMarkdown
 						remarkPlugins={[remarkGfm]}
-						className="prose dark:prose-invert prose-zinc max-w-none"
+						className="prose dark:prose-invert prose-zinc"
 						components={{
 							h1: ({ node, ...props }) => (
 								<h1
@@ -386,25 +424,12 @@ const PostDetailPage = () => {
 									{...props}
 								/>
 							),
-							ul: ({ node, ...props }) => (
-								<ul className="list-disc list-inside ml-5" {...props} />
-							),
-							ol: ({ node, ...props }) => (
-								<ol className="list-decimal list-inside ml-5" {...props} />
-							),
-							li: ({ node, ...props }) => <li className="my-1" {...props} />,
-							blockquote: ({ node, ...props }) => (
-								<blockquote
-									className="border-l-4 border-zinc-300 dark:border-zinc-700 pl-4 italic text-zinc-600 dark:text-zinc-400"
-									{...props}
-								/>
-							),
 						}}
 					>
 						{post.body.content}
 					</ReactMarkdown>
 				</div>
-				<div className="flex flex-wrap mt-4">
+				<div className="flex flex-wrap gap-2 mt-8">
 					{post.tags.map((tag) => (
 						<Tag key={tag} text={tag} />
 					))}

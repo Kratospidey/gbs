@@ -9,8 +9,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LinkPreview } from "@/components/ui/link-preview";
 import ProfilePostCard from "@/components/ProfilePostCard";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { useToast } from "@/components/hooks/use-toast";
 
 interface UserProfile {
 	firstName: string;
@@ -47,6 +46,7 @@ const UserProfilePage = () => {
 	const [user, setUser] = useState<UserProfile | null>(null);
 	const [posts, setPosts] = useState<UserPost[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
+	const { toast } = useToast();
 
 	useEffect(() => {
 		const fetchProfile = async () => {
@@ -82,7 +82,11 @@ const UserProfilePage = () => {
 				setPosts(filteredPosts);
 			} catch (error) {
 				console.error("Error:", error);
-				toast.error("Failed to load profile.");
+				toast({
+					title: "Error",
+					description: "Failed to load profile.",
+					variant: "destructive",
+				});
 			} finally {
 				setIsLoading(false);
 			}
@@ -91,7 +95,7 @@ const UserProfilePage = () => {
 		if (username) {
 			fetchProfile();
 		}
-	}, [username]);
+	}, [username, toast]);
 
 	if (isLoading)
 		return (
@@ -113,7 +117,6 @@ const UserProfilePage = () => {
 
 	return (
 		<div className="min-h-screen px-4 sm:px-6 lg:px-8">
-			<ToastContainer />
 			<div className="max-w-7xl mx-auto p-6">
 				<div className="flex items-center space-x-6 mb-8">
 					<Avatar className="h-24 w-24">

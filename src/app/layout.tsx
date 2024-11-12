@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import { Providers } from "./Providers";
 import "./globals.css";
 import RootLayoutClient from "./RootLayoutClient";
+import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -34,6 +35,7 @@ export default function RootLayout({
 						<Navbar />
 						<div id="dropdown-root" />
 						<RootLayoutClient>{children}</RootLayoutClient>
+						<Toaster />
 					</div>
 				</Providers>
 			</body>

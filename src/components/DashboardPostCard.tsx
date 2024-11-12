@@ -5,11 +5,10 @@ import React from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { CardBody, CardContainer, CardItem } from "./ui/3d-card";
+import { cn } from "@/lib/utils"; // Ensure you have a utility for className concatenation
 
-const commonCardBody = `
+const commonCardBody = cn(`
   relative group/card 
   bg-zinc-950/90 
   dark:hover:shadow-lg 
@@ -21,9 +20,9 @@ const commonCardBody = `
   p-6 
   border 
   transition-colors
-`;
+`);
 
-const commonButton = `
+const commonButton = cn(`
   px-4 py-2 
   rounded-md 
   bg-zinc-800 
@@ -32,22 +31,23 @@ const commonButton = `
   text-xs 
   font-medium 
   transition-colors
-`;
+`);
 
 const getStatusStyle = (status: Post["status"]) => {
-	const baseStyle =
-		"px-2 py-1 rounded-md text-[10px] font-medium transition-colors";
+	const baseStyle = cn(
+		"px-2 py-1 rounded-md text-[10px] font-medium transition-colors"
+	);
 	switch (status) {
 		case "published":
-			return `${baseStyle} bg-zinc-800 text-zinc-100`;
+			return cn(baseStyle, "bg-zinc-800 text-zinc-100");
 		case "draft":
-			return `${baseStyle} bg-zinc-900 text-zinc-400`;
+			return cn(baseStyle, "bg-zinc-900 text-zinc-400");
 		case "pending":
-			return `${baseStyle} bg-zinc-800 text-zinc-300`;
+			return cn(baseStyle, "bg-zinc-800 text-zinc-300");
 		case "archived":
-			return `${baseStyle} bg-zinc-900 text-zinc-500`;
+			return cn(baseStyle, "bg-zinc-900 text-zinc-500");
 		default:
-			return `${baseStyle} bg-zinc-900 text-zinc-400`;
+			return cn(baseStyle, "bg-zinc-900 text-zinc-400");
 	}
 };
 
@@ -146,7 +146,10 @@ const DashboardPostCard: React.FC<DashboardPostCardProps> = ({
 						<Button
 							onClick={handleEdit} // Use handleEdit which calls onEdit prop
 							disabled={isPending}
-							className="bg-zinc-800 hover:bg-zinc-700 text-zinc-100 disabled:opacity-50"
+							className={cn(
+								"bg-zinc-800 hover:bg-zinc-700 text-zinc-100 disabled:opacity-50",
+								"px-4 py-2 rounded-md text-xs font-medium transition-colors"
+							)}
 						>
 							Edit
 						</Button>
@@ -166,7 +169,7 @@ const DashboardPostCard: React.FC<DashboardPostCardProps> = ({
 								<Button
 									onClick={handleArchive}
 									disabled={isPending}
-									className={`${commonButton} disabled:opacity-50`}
+									className={cn(commonButton, "disabled:opacity-50")}
 								>
 									Archive
 								</Button>
@@ -174,7 +177,7 @@ const DashboardPostCard: React.FC<DashboardPostCardProps> = ({
 							<Button
 								onClick={handleDelete}
 								disabled={isPending}
-								className={`${commonButton} disabled:opacity-50`}
+								className={cn(commonButton, "disabled:opacity-50")}
 							>
 								Delete
 							</Button>
@@ -197,7 +200,6 @@ const DashboardPostCard: React.FC<DashboardPostCardProps> = ({
 						</div>
 					))}
 				</div>
-				<ToastContainer />
 			</CardBody>
 		</CardContainer>
 	);

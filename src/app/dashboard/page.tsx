@@ -6,8 +6,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import client from "@/lib/sanityClient";
 import { Button } from "@/components/ui/button";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import { useToast } from "@/components/hooks/use-toast";
 import DashboardPostCard from "@/components/DashboardPostCard";
 
 interface Post {
@@ -28,6 +27,7 @@ const DashboardPage: React.FC = () => {
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 	const router = useRouter();
 	const { user, isLoaded } = useUser();
+	const { toast } = useToast();
 
 	const filterOptions: {
 		label: string;
@@ -88,13 +88,16 @@ const DashboardPage: React.FC = () => {
 				setPosts(data);
 			} catch (error) {
 				console.error("Error fetching posts: ", error);
-				toast.error("Failed to fetch posts.");
+				toast({
+					title: "Error",
+					description: "Failed to fetch posts.",
+				});
 			}
 			setIsLoading(false);
 		};
 
 		fetchPosts();
-	}, [user, filter]);
+	}, [user, filter, toast]);
 
 	const handleDelete = async (postId: string, imageUrl: string | undefined) => {
 		const confirmDelete = window.confirm(
@@ -106,10 +109,17 @@ const DashboardPage: React.FC = () => {
 		try {
 			await client.delete(postId);
 			setPosts(posts.filter((post) => post._id !== postId));
-			toast.success("Post deleted successfully!");
+			toast({
+				title: "Success",
+				description: "Post deleted successfully!",
+			});
 		} catch (error) {
 			console.error("Error deleting post: ", error);
-			toast.error("Failed to delete post.");
+			toast({
+				title: "Error",
+				description: "Failed to delete post.",
+				variant: "destructive",
+			});
 		}
 		setIsLoading(false);
 	};
@@ -117,7 +127,11 @@ const DashboardPage: React.FC = () => {
 	const handleEdit = (slug: string | undefined) => {
 		if (!slug) {
 			console.error("Invalid slug provided");
-			toast.error("Invalid slug provided.");
+			toast({
+				title: "Error",
+				description: "Invalid slug provided.",
+				variant: "destructive",
+			});
 			return;
 		}
 		router.push(`/posts/edit/${slug}`);
@@ -133,10 +147,17 @@ const DashboardPage: React.FC = () => {
 		try {
 			await client.patch(postId).set({ status: "archived" }).commit();
 			setPosts(posts.filter((post) => post._id !== postId));
-			toast.success("Post archived successfully!");
+			toast({
+				title: "Success",
+				description: "Post archived successfully!",
+			});
 		} catch (error) {
 			console.error("Error archiving post: ", error);
-			toast.error("Failed to archive post.");
+			toast({
+				title: "Error",
+				description: "Failed to archive post.",
+				variant: "destructive",
+			});
 		}
 		setIsLoading(false);
 	};
@@ -155,18 +176,24 @@ const DashboardPage: React.FC = () => {
 				{ postId }
 			);
 			setPosts([updatedPost, ...posts]);
-			toast.success("Post unarchived successfully!");
-			setFilter("published"); // Add this line to switch to published tab
+			toast({
+				title: "Success",
+				description: "Post unarchived successfully!",
+			});
+			setFilter("published");
 		} catch (error) {
 			console.error("Error unarchiving post: ", error);
-			toast.error("Failed to unarchive post.");
+			toast({
+				title: "Error",
+				description: "Failed to unarchive post.",
+				variant: "destructive",
+			});
 		}
 		setIsLoading(false);
 	};
 
 	return (
 		<div className="max-w-5xl mx-auto p-6 dark:text-white">
-			<ToastContainer />
 			<h1 className="text-4xl font-bold mb-6 text-center text-foreground">
 				My Posts
 			</h1>
