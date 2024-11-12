@@ -70,6 +70,9 @@ const PostDetailPage = () => {
 
 	const isDesktop = useIsDesktop();
 
+	// Add a state for error handling
+	const [fetchError, setFetchError] = useState<string | null>(null);
+
 	useEffect(() => {
 		const fetchPostAndSaveStatus = async () => {
 			try {
@@ -105,6 +108,10 @@ const PostDetailPage = () => {
 					return;
 				}
 
+				if (!data.body || !data.body.content) {
+					throw new Error("Post content is missing.");
+				}
+
 				if (data.status !== "published") {
 					toast.error("This post is not available.");
 					router.push("/");
@@ -123,9 +130,11 @@ const PostDetailPage = () => {
 					);
 					setIsSaved(!!savedPostDoc);
 				}
-			} catch (error) {
+			} catch (error: any) {
 				console.error("Error fetching post:", error);
-				toast.error("An error occurred while fetching the post.");
+				setFetchError(
+					error.message || "An error occurred while fetching the post."
+				);
 				router.push("/");
 			}
 			setIsLoading(false);
@@ -272,10 +281,12 @@ const PostDetailPage = () => {
 		);
 	}
 
-	if (!post) {
+	if (fetchError || !post) {
 		return (
 			<div className="flex items-center justify-center min-h-screen">
-				<div className="text-zinc-600 dark:text-zinc-400">Post not found</div>
+				<div className="text-zinc-600 dark:text-zinc-400">
+					{fetchError || "Post not found"}
+				</div>
 			</div>
 		);
 	}
