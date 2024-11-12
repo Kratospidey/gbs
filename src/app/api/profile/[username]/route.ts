@@ -38,24 +38,24 @@ export async function GET(
 
 		// Fetch published posts by author
 		const postsQuery = groq`*[
-      _type == "post" &&
-      author._ref == $authorId &&
-      lower(status) == "published"
-    ]{
-      _id,
-      title,
-      "slug": slug.current,
-      publishedAt,
-      "mainImageUrl": mainImage.asset->url,
-      status,
-      tags,
-      author->{
-        name,
-        clerk_id,
-        firstName,
-        lastName
-      }
-    }`;
+			_type == "post" &&
+			references($authorId) &&
+			lower(status) == "published"
+		  ]{
+			_id,
+			title,
+			"slug": slug.current,
+			publishedAt,
+			"mainImageUrl": mainImage.asset->url,
+			status,
+			tags,
+			author->{
+			  name,
+			  clerk_id,
+			  firstName,
+			  lastName
+			}
+		  }`;
 
 		const posts = await client.fetch(postsQuery, { authorId: author._id });
 
@@ -118,3 +118,5 @@ export async function GET(
 		);
 	}
 }
+
+// fix code
