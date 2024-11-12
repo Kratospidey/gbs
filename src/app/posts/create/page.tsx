@@ -16,7 +16,6 @@ import {
 import { Separator } from "@/components/ui/separator";
 import client from "@/lib/sanityClient";
 import { useUser } from "@clerk/nextjs";
-import DarkModeToggle from "@/components/DarkModeToggle";
 import TipTapEditor from "@/components/MarkdownEditor";
 import { Tag } from "@/components/Tag";
 import { useRouter } from "next/navigation";
@@ -26,26 +25,22 @@ const CreatePost: React.FC = () => {
 	const { user, isLoaded } = useUser();
 	const router = useRouter();
 
-	// State declarations
 	const [title, setTitle] = useState<string>("");
 	const [content, setContent] = useState<string>("");
 	const [mainImage, setMainImage] = useState<File | null>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [tags, setTags] = useState<string[]>([]);
 	const [tagInput, setTagInput] = useState("");
-	const [errors, setErrors] = useState<{
-		title?: string;
-		content?: string;
-	}>({});
+	const [errors, setErrors] = useState<{ title?: string; content?: string }>(
+		{}
+	);
 
-	// Auth check effect
 	useEffect(() => {
 		if (isLoaded && !user) {
 			router.push("/signin");
 		}
 	}, [isLoaded, user, router]);
 
-	// Loading state
 	if (!isLoaded || !user) {
 		return (
 			<div className="min-h-screen flex items-center justify-center">
@@ -73,10 +68,7 @@ const CreatePost: React.FC = () => {
 			return;
 		}
 
-		// Reset errors
 		setErrors({});
-
-		// Validate required fields
 		const newErrors: { [key: string]: string } = {};
 
 		if (!title.trim()) {
@@ -86,7 +78,6 @@ const CreatePost: React.FC = () => {
 			newErrors.content = "Content is required";
 		}
 
-		// If there are errors, display them and stop submission
 		if (Object.keys(newErrors).length > 0) {
 			setErrors(newErrors);
 			return;
@@ -95,7 +86,6 @@ const CreatePost: React.FC = () => {
 		setIsLoading(true);
 
 		try {
-			// 1. Upload image to Sanity if exists
 			let imageAsset = null;
 			if (mainImage) {
 				imageAsset = await client.assets.upload("image", mainImage, {
@@ -104,7 +94,6 @@ const CreatePost: React.FC = () => {
 				});
 			}
 
-			// 2. Create/update author
 			const authorDoc = {
 				_type: "author",
 				_id: user.id,
@@ -114,11 +103,13 @@ const CreatePost: React.FC = () => {
 
 			await client.createOrReplace(authorDoc);
 
-			// 3. Create post with all fields
 			const slug = title
 				.toLowerCase()
 				.replace(/[^a-z0-9]+/g, "-")
 				.replace(/(^-|-$)/g, "");
+
+			// If the status is "published", set it to "pending" instead
+			const finalStatus = status === "published" ? "pending" : status;
 
 			const newPost = {
 				_type: "post",
@@ -140,7 +131,7 @@ const CreatePost: React.FC = () => {
 					: null,
 				tags: tags,
 				publishedAt: new Date().toISOString(),
-				status, // Use the passed status
+				status: finalStatus, // Use the adjusted status
 			};
 
 			await client.create(newPost);
@@ -224,6 +215,13 @@ const CreatePost: React.FC = () => {
 							}}
 							className="h-10 border-zinc-200 dark:border-zinc-800"
 						/>
+						{mainImage && (
+							<div className="mt-2">
+								<p className="text-sm text-gray-600 dark:text-gray-300">
+									New image selected: {mainImage.name}
+								</p>
+							</div>
+						)}
 					</div>
 
 					{/* Tags Field */}

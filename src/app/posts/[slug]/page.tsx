@@ -1,10 +1,9 @@
 // src/app/posts/[slug]/page.tsx
 "use client";
 
-import { supabase } from "@/lib/supabaseClient";
+import client from "@/lib/sanityClient";
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import client from "@/lib/sanityClient";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { ArrowUp, Clock, Calendar, Share2, Check } from "lucide-react";
@@ -19,12 +18,13 @@ import Image from "next/image";
 import Giscus from "@giscus/react";
 import { TracingBeam } from "@/components/ui/tracing-beam";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
-import { TextGenerateEffect } from "@/components/ui/text-generate-effect"; // Import the component
+import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
+import { urlFor } from "@/lib/sanityClient"; // Import urlFor for image URLs
 
 interface Post {
 	_id: string;
 	title: string;
-	status: string; // Added status field
+	status: string;
 	publishedAt: string;
 	mainImage: {
 		asset: {
@@ -52,19 +52,6 @@ interface PostDetail extends Post {
 	estimatedReadingTime?: number;
 }
 
-const getSupabaseImageUrl = (path: string | undefined) => {
-	if (!path) return "/default-avatar.png";
-
-	// If it's already a full URL, return it
-	if (path.startsWith("http")) {
-		return path;
-	}
-
-	// If it's a storage path, get the public URL
-	const { data } = supabase.storage.from("user_pfp").getPublicUrl(path);
-	return data?.publicUrl || "/default-avatar.png";
-};
-
 const PostDetailPage = () => {
 	const { user } = useUser();
 	const { slug } = useParams();
@@ -72,74 +59,50 @@ const PostDetailPage = () => {
 	const [post, setPost] = useState<PostDetail | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [isSaved, setIsSaved] = useState(false);
-	const [isShared, setIsShared] = useState(false); // Added state for share button
+	const [isShared, setIsShared] = useState(false);
 
-	const isDesktop = useIsDesktop(); // Use the custom hook
+	const isDesktop = useIsDesktop();
 
 	useEffect(() => {
 		const fetchPostAndSaveStatus = async () => {
 			try {
 				const data = await client.fetch(
 					`
-            *[_type == "post" && slug.current == $slug][0]{
-              _id,
-              title,
-              status, // Added status
-              body,
-              publishedAt,
-              mainImage{
-                asset->{url}
-              },
-              "author": {
-                "name": author->name,
-                "clerk_id": author->_id, // Use _id since we're storing clerk_id there
-                "profile_picture": author->profile_picture,
-              },
-              tags,
-              "estimatedReadingTime": round(length(body) / 5 / 180 )
-            }
-          `,
+                    *[_type == "post" && slug.current == $slug][0]{
+                        _id,
+                        title,
+                        status,
+                        body,
+                        publishedAt,
+                        mainImage{
+                            asset->{url}
+                        },
+                        "author": {
+                            "name": author->name,
+                            "clerk_id": author->clerk_id,
+                            "profile_picture": author->profile_picture,
+                        },
+                        tags,
+                        "estimatedReadingTime": round(length(body) / 5 / 180 )
+                    }
+                `,
 					{ slug }
 				);
 
-				// Check if the post exists
 				if (!data) {
 					toast.error("Post not found");
 					router.push("/");
 					return;
 				}
 
-				// Check if the post status is published
 				if (data.status !== "published") {
 					toast.error("This post is not available.");
 					router.push("/");
 					return;
 				}
 
-				// Fetch author profile from Supabase
-				if (data?.author?.clerk_id) {
-					const { data: profileData, error } = await supabase
-						.from("user_profiles")
-						.select("profile_picture, user_id")
-						.eq("user_id", data.author.clerk_id)
-						.single();
-
-					if (error) {
-						console.error("Error fetching author profile:", error);
-						// Optionally, you can decide to redirect or handle the error differently
-					}
-
-					if (profileData?.profile_picture) {
-						data.author = {
-							...data.author,
-							profile_picture: profileData.profile_picture,
-						};
-					}
-				}
-
 				setPost(data);
 
-				// Only check saved status if both user and post exist
 				if (user && data?._id) {
 					const savedPostDoc = await client.fetch(
 						`*[_type == "savedPost" && user == $userId && $postId in posts[].post._ref][0]`,
@@ -177,7 +140,6 @@ const PostDetailPage = () => {
 		}
 
 		try {
-			// Fetch the savedPost document for the user
 			const savedPostDoc = await client.fetch(
 				`*[_type == "savedPost" && user == $userId][0]`,
 				{
@@ -186,13 +148,11 @@ const PostDetailPage = () => {
 			);
 
 			if (savedPostDoc) {
-				// Check if the post is already saved
 				const postIndex = savedPostDoc.posts.findIndex(
 					(p: any) => p.post._ref === post._id
 				);
 
 				if (postIndex > -1) {
-					// Remove the post from the posts array
 					await client
 						.patch(savedPostDoc._id)
 						.unset([`posts[${postIndex}]`])
@@ -201,7 +161,6 @@ const PostDetailPage = () => {
 					setIsSaved(false);
 					toast.success("Removed from your saved posts!");
 				} else {
-					// Add the post to the posts array with a unique _key
 					await client
 						.patch(savedPostDoc._id)
 						.append("posts", [
@@ -220,7 +179,6 @@ const PostDetailPage = () => {
 					toast.success("Added to your saved posts!");
 				}
 			} else {
-				// Create a new savedPost document for the user
 				await client.create({
 					_type: "savedPost",
 					user: user.id,
@@ -248,18 +206,18 @@ const PostDetailPage = () => {
 	const sharePost = () => {
 		navigator.clipboard.writeText(window.location.href);
 		toast.success("Link copied to clipboard!");
-		setIsShared(true); // Set shared state to true
+		setIsShared(true);
 		setTimeout(() => {
-			setIsShared(false); // Reset after 2 seconds
+			setIsShared(false);
 		}, 2000);
 	};
 
 	const FloatingButtons: React.FC = () => (
 		<div
 			className={`
-        fixed bottom-8 flex flex-col space-y-2 z-50
-        left-4 sm:left-8 md:left-auto md:right-8
-      `}
+                fixed bottom-8 flex flex-col space-y-2 z-50
+                left-4 sm:left-8 md:left-auto md:right-8
+            `}
 		>
 			<Button
 				onClick={scrollToTop}
@@ -318,17 +276,15 @@ const PostDetailPage = () => {
 			<div className="relative h-[50vh] w-full">
 				<div className="absolute inset-0">
 					<Image
-						src={post.mainImage?.asset?.url}
+						src={urlFor(post.mainImage.asset.url).url()}
 						alt={post.title}
-						width={250}
-						height={250}
+						fill
 						className="w-full h-full object-cover"
 					/>
 					<div className="absolute inset-0 bg-black/50" />
 				</div>
 				<div className="absolute bottom-8 w-full flex justify-center px-4">
-					<TextGenerateEffect words={post.title} filter={true} />{" "}
-					{/* Positioned near bottom */}
+					<TextGenerateEffect words={post.title} filter={true} />
 				</div>
 			</div>
 
@@ -337,27 +293,14 @@ const PostDetailPage = () => {
 				{/* Author and Meta Info */}
 				<div className="flex items-center justify-between mb-8 border-b pb-8">
 					<div className="flex items-center space-x-4">
-						<Link href={`/profile/${post.author?.name?.toLowerCase()}`}>
+						<Link href={`/profile/${post.author?.name.toLowerCase()}`}>
 							<Avatar className="h-12 w-12 cursor-pointer hover:opacity-80 transition-opacity">
 								<AvatarImage
-									src={(() => {
-										if (!post.author?.profile_picture)
-											return "/default-avatar.png";
-
-										// If it's already a full URL (from Supabase), use it directly
-										if (post.author.profile_picture.startsWith("http")) {
-											return post.author.profile_picture;
-										}
-
-										// If it's a relative path, construct Supabase URL
-										const { data } = supabase.storage
-											.from("user_pfp")
-											.getPublicUrl(
-												`public/${post.author.clerk_id}/${post.author.profile_picture}`
-											);
-
-										return data?.publicUrl || "/default-avatar.png";
-									})()}
+									src={
+										post.author?.profile_picture
+											? urlFor(post.author.profile_picture).url()
+											: "/default-avatar.png"
+									}
 									alt={post.author?.name || "Author"}
 								/>
 								<AvatarFallback>
@@ -366,7 +309,7 @@ const PostDetailPage = () => {
 							</Avatar>
 						</Link>
 						<div>
-							<Link href={`/profile/${post.author?.name?.toLowerCase()}`}>
+							<Link href={`/profile/${post.author?.name.toLowerCase()}`}>
 								<h3 className="font-medium text-gray-900 dark:text-gray-100 hover:underline cursor-pointer">
 									{post.author?.name}
 								</h3>
@@ -447,10 +390,9 @@ const PostDetailPage = () => {
 				<div className="relative h-[50vh] w-full">
 					<div className="absolute inset-0">
 						<Image
-							src={post.mainImage?.asset?.url}
+							src={urlFor(post.mainImage.asset.url).url()}
 							alt={post.title}
-							width={250}
-							height={250}
+							fill
 							className="w-full h-full object-cover"
 						/>
 						<div className="absolute inset-0 bg-zinc-950/50 backdrop-blur-[2px]" />
@@ -465,10 +407,14 @@ const PostDetailPage = () => {
 					{/* Author and Meta Info */}
 					<div className="flex items-center justify-between mb-8 border-b border-zinc-200 dark:border-zinc-800 pb-8">
 						<div className="flex items-center space-x-4">
-							<Link href={`/profile/${post.author?.name?.toLowerCase()}`}>
+							<Link href={`/profile/${post.author?.name.toLowerCase()}`}>
 								<Avatar className="h-12 w-12 cursor-pointer ring-2 ring-zinc-100 dark:ring-zinc-800 transition-all hover:ring-4">
 									<AvatarImage
-										src={getSupabaseImageUrl(post.author?.profile_picture)}
+										src={
+											post.author?.profile_picture
+												? urlFor(post.author.profile_picture).url()
+												: "/default-avatar.png"
+										}
 										alt={post.author?.name || "Author"}
 									/>
 									<AvatarFallback className="bg-zinc-100 dark:bg-zinc-800">
@@ -477,7 +423,7 @@ const PostDetailPage = () => {
 								</Avatar>
 							</Link>
 							<div>
-								<Link href={`/profile/${post.author?.name?.toLowerCase()}`}>
+								<Link href={`/profile/${post.author?.name.toLowerCase()}`}>
 									<h3 className="font-medium text-zinc-900 dark:text-zinc-100 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
 										{post.author?.name}
 									</h3>

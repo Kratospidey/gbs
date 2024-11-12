@@ -1,5 +1,4 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
+// src/app/api/delete/route.ts
 import { NextResponse, NextRequest } from "next/server";
 import client from "@/lib/sanityClient";
 import { getAuth } from "@clerk/nextjs/server";
@@ -12,7 +11,7 @@ export async function DELETE(request: NextRequest) {
 			return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 		}
 
-		const { postId, imageUrl } = await request.json();
+		const { postId } = await request.json();
 
 		// Verify post ownership
 		const post = await client.fetch(
@@ -27,21 +26,27 @@ export async function DELETE(request: NextRequest) {
 			);
 		}
 
-		const supabase = createRouteHandlerClient({ cookies });
+		// Delete image asset from Sanity if it exists
+		if (post.mainImage?.asset?._ref) {
+			const assetRef: string = post.mainImage.asset._ref; // e.g., "image-abc123-200x200-png"
+			const assetId = assetRef.split("-").slice(0, 2).join("-"); // Extract "image-abc123"
 
-		// Delete from Sanity
-		await client.delete(postId);
-
-		// Delete image from Supabase if exists
-		if (imageUrl) {
-			const fileName = imageUrl.split("/").pop();
-			await supabase.storage
-				.from("post_banners")
-				.remove([`public/${fileName}`]);
+			try {
+				// Use client.delete to remove the asset by its ID
+				await client.delete(assetId);
+				console.log(`Deleted image asset: ${assetId}`);
+			} catch (assetError) {
+				console.error(`Failed to delete image asset ${assetId}:`, assetError);
+				// Continue to delete the post even if image deletion fails
+			}
 		}
 
+		// Delete the post document
+		await client.delete(postId);
+		console.log(`Deleted post: ${postId}`);
+
 		return NextResponse.json({ success: true });
-	} catch (error) {
+	} catch (error: any) {
 		console.error("Delete error:", error);
 		return NextResponse.json(
 			{ error: "Failed to delete post" },

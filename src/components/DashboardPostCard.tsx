@@ -73,6 +73,7 @@ interface DashboardPostCardProps {
 	onDelete: (id: string) => void;
 	onArchive: (id: string) => void;
 	onUnarchive: (id: string) => void;
+	onEdit: (slug: string | undefined) => void; // Added onEdit prop
 }
 
 const DashboardPostCard: React.FC<DashboardPostCardProps> = ({
@@ -80,6 +81,7 @@ const DashboardPostCard: React.FC<DashboardPostCardProps> = ({
 	onDelete,
 	onArchive,
 	onUnarchive,
+	onEdit, // Destructure onEdit from props
 }) => {
 	const router = useRouter();
 	const isArchived = post.status === "archived";
@@ -87,7 +89,7 @@ const DashboardPostCard: React.FC<DashboardPostCardProps> = ({
 	const isDraft = post.status === "draft";
 
 	const handleEdit = () => {
-		router.push(`/posts/edit/${post.slug}`);
+		onEdit(post.slug); // Use the onEdit prop
 	};
 
 	const handleArchive = () => {
@@ -142,7 +144,7 @@ const DashboardPostCard: React.FC<DashboardPostCardProps> = ({
 				<div className="flex justify-around items-center mt-6">
 					{!isArchived && (
 						<Button
-							onClick={handleEdit}
+							onClick={handleEdit} // Use handleEdit which calls onEdit prop
 							disabled={isPending}
 							className="bg-zinc-800 hover:bg-zinc-700 text-zinc-100 disabled:opacity-50"
 						>

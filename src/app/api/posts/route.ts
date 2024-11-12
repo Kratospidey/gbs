@@ -1,7 +1,6 @@
 // src/app/api/posts/route.ts
 import { NextResponse } from "next/server";
 import sanityClient from "@/lib/sanityClient";
-import { supabase } from "@/lib/supabaseClient";
 import { getClerkUserByUsername } from "@/lib/getClerkUserByUsername";
 
 // Add Route Segment Config
@@ -22,6 +21,8 @@ interface Post {
 	mainImageUrl: string;
 	tags: string[];
 	authorName: string | null;
+	authorFirstName?: string;
+	authorLastName?: string;
 	author?: Author;
 }
 
@@ -43,19 +44,19 @@ export async function GET(request: Request) {
 
 		if (tagsParam) {
 			const tags = tagsParam.split(",").map((tag) => tag.trim().toLowerCase());
-			// Use the 'in' operator and ensure the condition is inside the []
 			finalQuery += ` && (${tags.map((tag) => `"${tag}" in tags`).join(" || ")})`;
 		}
 
-		// Close the filter bracket after all conditions
 		finalQuery += `] | order(publishedAt ${sortOrder}) {
-        _id,
-        title,
-        "slug": slug.current,
-        publishedAt,
-        tags,
-        "mainImageUrl": mainImage.asset->url,
-        "authorName": author->name
+      _id,
+      title,
+      "slug": slug.current,
+      publishedAt,
+      tags,
+      "mainImageUrl": mainImage.asset->url,
+      "authorName": author->name,
+      "authorFirstName": author->firstName,
+      "authorLastName": author->lastName
     }`;
 
 		console.log("Final GROQ Query:", finalQuery);
@@ -92,40 +93,7 @@ export async function GET(request: Request) {
 
 		console.log("Username to ClerkUser Map:", usernameToClerkUser);
 
-		// Fetch Supabase profiles
-		const supabaseProfiles = await Promise.all(
-			clerkUsers.map((user) => {
-				if (user && user.id) {
-					return supabase
-						.from("user_profiles")
-						.select("user_id, first_name, last_name")
-						.eq("user_id", user.id)
-						.single();
-				}
-				return null;
-			})
-		);
-
-		console.log("Fetched Supabase Profiles:", supabaseProfiles);
-
-		// Create a mapping from Clerk user ID to Supabase profile
-		const userIdToProfile: Record<
-			string,
-			{ first_name: string; last_name: string }
-		> = {};
-
-		supabaseProfiles.forEach((profile) => {
-			if (profile && profile.data && profile.data.user_id) {
-				userIdToProfile[profile.data.user_id] = {
-					first_name: profile.data.first_name,
-					last_name: profile.data.last_name,
-				};
-			}
-		});
-
-		console.log("UserID to Profile Map:", userIdToProfile);
-
-		// Enrich posts with author information
+		// Enrich posts with author information from Sanity
 		const enrichedPosts = posts.map((post) => {
 			if (!post.authorName) {
 				console.warn(`Post "${post.title}" has no authorName.`);
@@ -133,20 +101,14 @@ export async function GET(request: Request) {
 			}
 			const clerkUser = usernameToClerkUser[post.authorName];
 			if (clerkUser) {
-				const profile = userIdToProfile[clerkUser.id];
-				if (profile) {
-					return {
-						...post,
-						author: {
-							username: clerkUser.username,
-							firstName: profile.first_name,
-							lastName: profile.last_name,
-						},
-					};
-				} else {
-					console.warn(`No profile found for Clerk user ID ${clerkUser.id}`);
-					return post;
-				}
+				return {
+					...post,
+					author: {
+						username: clerkUser.username,
+						firstName: post.authorFirstName || "",
+						lastName: post.authorLastName || "",
+					},
+				};
 			}
 			console.warn(`No Clerk user found for username ${post.authorName}`);
 			return post;

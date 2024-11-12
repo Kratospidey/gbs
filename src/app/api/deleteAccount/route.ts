@@ -1,6 +1,6 @@
+// src/app/api/[tagname]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
-import { supabase } from "@/lib/supabaseClient";
 import sanityClient from "@/lib/sanityClient";
 import { createClerkClient } from "@clerk/clerk-sdk-node";
 
@@ -46,17 +46,7 @@ export async function DELETE(request: NextRequest) {
 		// Commit the transaction in Sanity
 		await transaction.commit();
 
-		// Step 5: Delete the user profile from Supabase
-		const { error: supabaseError } = await supabase
-			.from("user_profiles")
-			.delete()
-			.eq("user_id", userId);
-
-		if (supabaseError) {
-			throw new Error(supabaseError.message);
-		}
-
-		// Step 6: Finally, delete the user itself from Clerk
+		// Step 5: Delete the user itself from Clerk using the clerk_id from the author document
 		await clerkClient.users.deleteUser(userId);
 
 		return NextResponse.json(
