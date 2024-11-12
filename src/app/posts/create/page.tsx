@@ -21,6 +21,9 @@ import { Tag } from "@/components/Tag";
 import { useRouter } from "next/navigation";
 import { Icons } from "@/components/icons.tsx";
 
+// Import UUID library to generate unique IDs
+import { v4 as uuidv4 } from "uuid";
+
 const CreatePost: React.FC = () => {
 	const { user, isLoaded } = useUser();
 	const router = useRouter();
@@ -42,6 +45,7 @@ const CreatePost: React.FC = () => {
 	}, [isLoaded, user, router]);
 
 	if (!isLoaded || !user) {
+		// Return loading UI or null
 		return (
 			<div className="min-h-screen flex items-center justify-center">
 				<div className="text-lg text-gray-600 dark:text-gray-300">
@@ -94,31 +98,58 @@ const CreatePost: React.FC = () => {
 				});
 			}
 
-			const authorDoc = {
-				_type: "author",
-				_id: user.id,
-				name: user.username || user.firstName || "Anonymous",
-				clerk_id: user.id,
-			};
+			// Fetch the author document where clerk_id matches the user.id
+			const existingAuthor = await client.fetch(
+				`*[_type == "author" && clerk_id == $clerkId][0]`,
+				{ clerkId: user.id }
+			);
 
-			await client.createOrReplace(authorDoc);
+			let authorId;
+
+			if (existingAuthor) {
+				// Use existing author document's _id
+				authorId = existingAuthor._id;
+			} else {
+				// Create a new author document
+				authorId = uuidv4(); // Generate a unique ID
+
+				const authorDoc = {
+					_type: "author",
+					_id: authorId,
+					name: user.username || user.firstName || "Anonymous",
+					clerk_id: user.id,
+					firstName: user.firstName || "",
+					lastName: user.lastName || "",
+					email:
+						user.emailAddresses[0]?.emailAddress ||
+						user.primaryEmailAddressId ||
+						"",
+					// Include other fields as necessary
+				};
+
+				await client.create(authorDoc);
+			}
 
 			const slug = title
 				.toLowerCase()
 				.replace(/[^a-z0-9]+/g, "-")
 				.replace(/(^-|-$)/g, "");
 
-			// If the status is "published", set it to "pending" instead
+			// Set the final status
 			const finalStatus = status === "published" ? "pending" : status;
 
+			// Create the new post
 			const newPost = {
 				_type: "post",
 				title,
 				slug: { _type: "slug", current: slug },
-				body: content,
+				body: { 
+					_type: "markdown",
+					content: content // Content from TipTapEditor should already be markdown
+				},
 				author: {
 					_type: "reference",
-					_ref: user.id,
+					_ref: authorId,
 				},
 				mainImage: imageAsset
 					? {
@@ -131,7 +162,7 @@ const CreatePost: React.FC = () => {
 					: null,
 				tags: tags,
 				publishedAt: new Date().toISOString(),
-				status: finalStatus, // Use the adjusted status
+				status: finalStatus,
 			};
 
 			await client.create(newPost);

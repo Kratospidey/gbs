@@ -5,33 +5,17 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import client from "@/lib/sanityClient";
-import DarkModeToggle from "@/components/DarkModeToggle";
 import { Button } from "@/components/ui/button";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { Tag } from "@/components/Tag";
-import Image from "next/image";
 import DashboardPostCard from "@/components/DashboardPostCard";
-
-interface Slug {
-	current: string;
-}
-
-interface Asset {
-	url: string;
-	_ref: string;
-}
-
-interface MainImage {
-	asset: Asset;
-}
 
 interface Post {
 	_id: string;
 	title: string;
-	slug: Slug;
+	slug: { current: string };
 	publishedAt: string;
-	mainImage?: MainImage;
+	mainImage?: { asset: { url: string; _ref: string } };
 	status: "pending" | "published" | "draft" | "archived";
 	tags?: string[];
 }
@@ -45,17 +29,14 @@ const DashboardPage: React.FC = () => {
 	const router = useRouter();
 	const { user, isLoaded } = useUser();
 
-	const filterOptions: {
-		label: string;
-		value: "published" | "drafts" | "archived" | "pending";
-	}[] = [
-		{ label: "Published", value: "published" },
-		{ label: "Pending", value: "pending" },
-		{ label: "Drafts", value: "drafts" },
-		{ label: "Archived", value: "archived" },
-	];
+	const filterOptions: { label: string; value: "published" | "drafts" | "archived" | "pending" }[] = [
+			{ label: "Published", value: "published" },
+			{ label: "Pending", value: "pending" },
+			{ label: "Drafts", value: "drafts" },
+			{ label: "Archived", value: "archived" },
+		];
 
-	const noPostsMessages: { [key in typeof filter]: string } = {
+	const noPostsMessages = {
 		published: "No published posts found.",
 		pending: "No posts are pending review.",
 		drafts: "No drafts found.",
@@ -72,8 +53,9 @@ const DashboardPage: React.FC = () => {
 		if (!user) return;
 
 		const fetchPosts = async () => {
+			setIsLoading(true);
 			try {
-				let query = `*[_type == 'post' && author._ref == $userId`;
+				let query = `*[_type == 'post' && author->clerk_id == $clerkId`;
 
 				switch (filter) {
 					case "drafts":
@@ -90,16 +72,16 @@ const DashboardPage: React.FC = () => {
 				}
 
 				query += `] | order(publishedAt desc) {
-                    _id,
-                    title,
-                    slug,
-                    publishedAt,
-                    status,
-                    mainImage { asset->{ url, _ref } },
-                    tags
-                }`;
+          _id,
+          title,
+          slug,
+          publishedAt,
+          status,
+          mainImage { asset->{ url, _ref } },
+          tags
+        }`;
 
-				const data: Post[] = await client.fetch(query, { userId: user.id });
+				const data: Post[] = await client.fetch(query, { clerkId: user.id });
 				setPosts(data);
 			} catch (error) {
 				console.error("Error fetching posts: ", error);
@@ -193,18 +175,18 @@ const DashboardPage: React.FC = () => {
 						onClick={() => setFilter(value)}
 						variant={filter === value ? "default" : "outline"}
 						className={`
-                            px-2 sm:px-4 py-2 
-                            rounded-md 
-                            transition-colors 
-                            text-xs 
-                            font-medium
-                            whitespace-nowrap
-                            ${
-															filter === value
-																? "bg-zinc-800 text-zinc-100 hover:bg-zinc-700"
-																: "bg-zinc-950/40 backdrop-blur-sm border border-zinc-800 text-zinc-300 hover:bg-zinc-900 hover:text-zinc-100"
-														}
-                        `}
+              px-2 sm:px-4 py-2 
+              rounded-md 
+              transition-colors 
+              text-xs 
+              font-medium
+              whitespace-nowrap
+              ${
+								filter === value
+									? "bg-zinc-800 text-zinc-100 hover:bg-zinc-700"
+									: "bg-zinc-950/40 backdrop-blur-sm border border-zinc-800 text-zinc-300 hover:bg-zinc-900 hover:text-zinc-100"
+							}
+            `}
 					>
 						{label}
 					</Button>

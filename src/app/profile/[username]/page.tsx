@@ -56,7 +56,12 @@ const UserProfilePage = () => {
 
 				if (!res.ok) throw new Error(data.error);
 
-				setUser(data.user);
+				setUser({
+					...data.user,
+					firstName: data.user.firstName || "",
+					lastName: data.user.lastName || "",
+					email: data.user.email || "",
+				});
 
 				const filteredPosts: UserPost[] = data.posts.map((post: any) => ({
 					_id: post._id,
@@ -117,13 +122,15 @@ const UserProfilePage = () => {
 							alt={`${user.firstName} ${user.lastName}`}
 						/>
 						<AvatarFallback>
-							{user.firstName.charAt(0).toUpperCase() || "U"}
+							{user.name ? user.name.charAt(0).toUpperCase() : "U"}
 						</AvatarFallback>
 					</Avatar>
 
 					<div className="space-y-4">
 						<div>
-							<h2 className="text-3xl font-bold text-foreground">{`${user.firstName} ${user.lastName}`}</h2>
+							<h2 className="text-3xl font-bold text-foreground">{`${user.firstName || "First"} ${
+								user.lastName || "Last"
+							}`}</h2>
 							<p className="text-muted-foreground">@{user.name}</p>
 						</div>
 

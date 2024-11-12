@@ -1,7 +1,7 @@
 // src/app/posts/[slug]/page.tsx
 "use client";
 
-import client from "@/lib/sanityClient";
+import client, { urlFor } from "@/lib/sanityClient";
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -19,7 +19,6 @@ import Giscus from "@giscus/react";
 import { TracingBeam } from "@/components/ui/tracing-beam";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
-import { urlFor } from "@/lib/sanityClient"; // Import urlFor for image URLs
 
 interface Post {
 	_id: string;
@@ -40,16 +39,24 @@ interface Post {
 interface Author {
 	name: string;
 	clerk_id?: string;
-	profile_picture?: string;
+	image?: {
+		// Changed from profile_picture to match Sanity schema
+		_type: "image";
+		asset: {
+			_ref: string;
+			_type: "reference";
+		};
+	};
 	linkedin?: string;
 	github?: string;
 	website?: string;
 }
 
-interface PostDetail extends Post {
-	body: string;
-	author: Author;
-	estimatedReadingTime?: number;
+interface PostDetail extends Omit<Post, "body"> {
+	body: {
+		_type: "markdown";
+		content: string;
+	};
 }
 
 const PostDetailPage = () => {
@@ -68,24 +75,27 @@ const PostDetailPage = () => {
 			try {
 				const data = await client.fetch(
 					`
-                    *[_type == "post" && slug.current == $slug][0]{
-                        _id,
-                        title,
-                        status,
-                        body,
-                        publishedAt,
-                        mainImage{
-                            asset->{url}
-                        },
-                        "author": {
-                            "name": author->name,
-                            "clerk_id": author->clerk_id,
-                            "profile_picture": author->profile_picture,
-                        },
-                        tags,
-                        "estimatedReadingTime": round(length(body) / 5 / 180 )
-                    }
-                `,
+          *[_type == "post" && slug.current == $slug][0]{
+            _id,
+            title,
+            status,
+            body{
+              _type,
+              content
+            },
+            publishedAt,
+            mainImage{
+              asset->{url}
+            },
+            "author": {
+              "name": author->name,
+              "clerk_id": author->clerk_id,
+              "image": author->image, // Change profile_picture to image to match schema
+            },
+            tags,
+            "estimatedReadingTime": round(length(body.content) / 5 / 180)
+          }
+          `,
 					{ slug }
 				);
 
@@ -215,9 +225,9 @@ const PostDetailPage = () => {
 	const FloatingButtons: React.FC = () => (
 		<div
 			className={`
-                fixed bottom-8 flex flex-col space-y-2 z-50
-                left-4 sm:left-8 md:left-auto md:right-8
-            `}
+        fixed bottom-8 flex flex-col space-y-2 z-50
+        left-4 sm:left-8 md:left-auto md:right-8
+      `}
 		>
 			<Button
 				onClick={scrollToTop}
@@ -293,25 +303,25 @@ const PostDetailPage = () => {
 				{/* Author and Meta Info */}
 				<div className="flex items-center justify-between mb-8 border-b pb-8">
 					<div className="flex items-center space-x-4">
-						<Link href={`/profile/${post.author?.name.toLowerCase()}`}>
+						<Link href={`/profile/${post.author.name.toLowerCase()}`}>
 							<Avatar className="h-12 w-12 cursor-pointer hover:opacity-80 transition-opacity">
 								<AvatarImage
 									src={
-										post.author?.profile_picture
-											? urlFor(post.author.profile_picture).url()
+										post.author.image?.asset?._ref
+											? urlFor(post.author.image).url()
 											: "/default-avatar.png"
 									}
-									alt={post.author?.name || "Author"}
+									alt={post.author.name || "Author"}
 								/>
 								<AvatarFallback>
-									{post.author?.name?.[0]?.toUpperCase() || "?"}
+									{post.author.name?.[0]?.toUpperCase() || "?"}
 								</AvatarFallback>
 							</Avatar>
 						</Link>
 						<div>
-							<Link href={`/profile/${post.author?.name.toLowerCase()}`}>
+							<Link href={`/profile/${post.author.name.toLowerCase()}`}>
 								<h3 className="font-medium text-gray-900 dark:text-gray-100 hover:underline cursor-pointer">
-									{post.author?.name}
+									{post.author.name}
 								</h3>
 							</Link>
 							<div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
@@ -351,14 +361,16 @@ const PostDetailPage = () => {
 							),
 						}}
 					>
-						{post.body}
+						{post.body.content}
 					</ReactMarkdown>
 				</div>
 				<div className="flex flex-wrap mt-4">
-					{post.tags?.map((tag) => <Tag key={tag} text={tag} />)}
+					{post.tags.map((tag) => (
+						<Tag key={tag} text={tag} />
+					))}
 				</div>
 
-				{/* Giscus Comments */}
+				{/* Comments Section */}
 				<div className="mt-8">
 					<section id="comments" className="prose dark:prose-invert">
 						<h2>Comments</h2>
@@ -407,25 +419,25 @@ const PostDetailPage = () => {
 					{/* Author and Meta Info */}
 					<div className="flex items-center justify-between mb-8 border-b border-zinc-200 dark:border-zinc-800 pb-8">
 						<div className="flex items-center space-x-4">
-							<Link href={`/profile/${post.author?.name.toLowerCase()}`}>
+							<Link href={`/profile/${post.author.name.toLowerCase()}`}>
 								<Avatar className="h-12 w-12 cursor-pointer ring-2 ring-zinc-100 dark:ring-zinc-800 transition-all hover:ring-4">
 									<AvatarImage
 										src={
-											post.author?.profile_picture
-												? urlFor(post.author.profile_picture).url()
+											post.author.image?.asset?._ref
+												? urlFor(post.author.image).url()
 												: "/default-avatar.png"
 										}
-										alt={post.author?.name || "Author"}
+										alt={post.author.name || "Author"}
 									/>
 									<AvatarFallback className="bg-zinc-100 dark:bg-zinc-800">
-										{post.author?.name?.[0]?.toUpperCase() || "?"}
+										{post.author.name?.[0]?.toUpperCase() || "?"}
 									</AvatarFallback>
 								</Avatar>
 							</Link>
 							<div>
-								<Link href={`/profile/${post.author?.name.toLowerCase()}`}>
+								<Link href={`/profile/${post.author.name.toLowerCase()}`}>
 									<h3 className="font-medium text-zinc-900 dark:text-zinc-100 hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
-										{post.author?.name}
+										{post.author.name}
 									</h3>
 								</Link>
 								<div className="flex items-center space-x-4 text-sm text-zinc-500 dark:text-zinc-400">
@@ -479,12 +491,14 @@ const PostDetailPage = () => {
 								),
 							}}
 						>
-							{post.body}
+							{post.body.content}
 						</ReactMarkdown>
 					</div>
 
 					<div className="flex flex-wrap gap-2 mt-8">
-						{post.tags?.map((tag) => <Tag key={tag} text={tag} />)}
+						{post.tags.map((tag) => (
+							<Tag key={tag} text={tag} />
+						))}
 					</div>
 
 					{/* Comments Section */}

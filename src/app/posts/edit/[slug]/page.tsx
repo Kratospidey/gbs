@@ -24,7 +24,10 @@ import DarkModeToggle from "@/components/DarkModeToggle";
 interface Post {
 	_id: string;
 	title: string;
-	body: string;
+	body: {
+		_type: "markdown";
+		content: string;
+	};
 	mainImage: {
 		_type: "image";
 		asset: {
@@ -153,69 +156,42 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 		}
 
 		setIsLoading(true);
-		let newImageAsset = null;
 
-		// Handle main image upload if a new image is selected
-		if (mainImage) {
-			try {
+		try {
+			let newImageAsset = null;
+
+			// Handle main image upload if a new image is selected
+			if (mainImage) {
 				newImageAsset = await client.assets.upload("image", mainImage, {
 					filename: mainImage.name,
 					contentType: mainImage.type,
 				});
-
-				// Delete the existing image from Sanity
-				if (existingMainImageUrl) {
-					const existingAssetRef = existingMainImageUrl
-						.split("/")
-						.pop()
-						?.split("-")
-						.slice(0, 2)
-						.join("-");
-					if (existingAssetRef) {
-						try {
-							await client.delete(existingAssetRef);
-							console.log(`Deleted existing image asset: ${existingAssetRef}`);
-						} catch (deleteError) {
-							console.error(
-								`Failed to delete existing image asset: ${existingAssetRef}`,
-								deleteError
-							);
-							// Optionally, notify the user but continue with the update
-						}
-					}
-				}
-			} catch (error: any) {
-				console.error("Error uploading image to Sanity:", error);
-				alert("Failed to upload main image. Please try again.");
-				setIsLoading(false);
-				return;
 			}
-		}
 
-		// Determine the new status based on the action
-		let newStatus = action === "published" ? "pending" : action;
+			// Determine the new status based on the action
+			let newStatus = action === "published" ? "pending" : action;
 
-		// Update the post in Sanity
-		const updatedPost: Partial<Post> = {
-			title: title,
-			body: content, // 'content' contains markdown
-			status: newStatus, // Set status to 'pending' if action is 'published'
-			tags: tags, // Add tags
-			// Only update mainImage if a new one is selected
-			...(newImageAsset
-				? {
-						mainImage: {
-							_type: "image",
-							asset: {
-								_type: "reference",
-								_ref: newImageAsset._id,
-							},
+			// Update the post in Sanity
+			const updatedPost: Partial<Post> = {
+				title: title,
+				body: {
+					_type: "markdown",
+					content: content,
+				},
+				status: newStatus,
+				tags: tags,
+				// Update mainImage only if a new one is selected
+				...(newImageAsset && {
+					mainImage: {
+						_type: "image",
+						asset: {
+							_type: "reference",
+							_ref: newImageAsset._id,
 						},
-					}
-				: {}),
-		};
+					},
+				}),
+			};
 
-		try {
 			await client.patch(postId).set(updatedPost).commit();
 			alert("Post updated successfully!");
 			router.push(`/posts/${params.slug}`);
