@@ -1,5 +1,3 @@
-// src/app/api/profile/[username]/route.ts
-
 import { NextResponse } from "next/server";
 import client from "@/lib/sanityClient"; // Sanity client
 import groq from "groq"; // GROQ tagged template
@@ -39,7 +37,11 @@ export async function GET(
 		const email = author.email || "";
 
 		// Fetch published posts by author
-		const postsQuery = groq`*[_type == "post" && author._ref == $authorId && status == "published"]{
+		const postsQuery = groq`*[
+      _type == "post" &&
+      author._ref == $authorId &&
+      lower(status) == "published"
+    ]{
       _id,
       title,
       "slug": slug.current,
