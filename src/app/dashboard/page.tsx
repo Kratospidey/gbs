@@ -29,12 +29,15 @@ const DashboardPage: React.FC = () => {
 	const router = useRouter();
 	const { user, isLoaded } = useUser();
 
-	const filterOptions: { label: string; value: "published" | "drafts" | "archived" | "pending" }[] = [
-			{ label: "Published", value: "published" },
-			{ label: "Pending", value: "pending" },
-			{ label: "Drafts", value: "drafts" },
-			{ label: "Archived", value: "archived" },
-		];
+	const filterOptions: {
+		label: string;
+		value: "published" | "drafts" | "archived" | "pending";
+	}[] = [
+		{ label: "Published", value: "published" },
+		{ label: "Pending", value: "pending" },
+		{ label: "Drafts", value: "drafts" },
+		{ label: "Archived", value: "archived" },
+	];
 
 	const noPostsMessages = {
 		published: "No published posts found.",
@@ -153,6 +156,7 @@ const DashboardPage: React.FC = () => {
 			);
 			setPosts([updatedPost, ...posts]);
 			toast.success("Post unarchived successfully!");
+			setFilter("published"); // Add this line to switch to published tab
 		} catch (error) {
 			console.error("Error unarchiving post: ", error);
 			toast.error("Failed to unarchive post.");

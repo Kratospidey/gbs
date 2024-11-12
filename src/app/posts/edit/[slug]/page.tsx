@@ -82,27 +82,30 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 			try {
 				const fetchedPost = await client.fetch(
 					`*[_type == "post" && slug.current == $slug][0] {
-                    _id,
-                    title,
-                    body,
-                    status,
-                    mainImage {
-                        asset-> {
-                            _id,
-                            url
-                        }
-                    },
-                    tags,
-                    "slug": slug.current,
-                    _updatedAt
-                }`,
+    _id,
+    title,
+    body {
+      _type,
+      content
+    },
+    status,
+    mainImage {
+      asset-> {
+        _id,
+        url
+      }
+    },
+    tags,
+    "slug": slug.current,
+    _updatedAt
+  }`,
 					{ slug: params.slug }
 				);
 
 				if (fetchedPost) {
 					setPostId(fetchedPost._id);
 					setTitle(fetchedPost.title || "");
-					setContent(fetchedPost.body || "");
+					setContent(fetchedPost.body.content || ""); // Access content field
 					setTags(fetchedPost.tags || []);
 					setCurrentStatus(fetchedPost.status || "draft");
 					if (fetchedPost.mainImage?.asset?.url) {
