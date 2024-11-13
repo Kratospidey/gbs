@@ -211,6 +211,7 @@ const PostDetailPage = () => {
 								post: {
 									_type: "reference",
 									_ref: post._id,
+									_weak: true, // Add this line
 								},
 								savedAt: new Date().toISOString(),
 							},
@@ -234,6 +235,7 @@ const PostDetailPage = () => {
 							post: {
 								_type: "reference",
 								_ref: post._id,
+								_weak: true, // Add this line
 							},
 							savedAt: new Date().toISOString(),
 						},

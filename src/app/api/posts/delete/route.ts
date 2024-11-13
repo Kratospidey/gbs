@@ -1,4 +1,5 @@
 // src/app/api/delete/route.ts
+
 import { NextResponse, NextRequest } from "next/server";
 import client from "@/lib/sanityClient";
 import { getAuth } from "@clerk/nextjs/server";
@@ -26,28 +27,32 @@ export async function DELETE(request: NextRequest) {
 			);
 		}
 
-		// Delete image asset from Sanity if it exists
-		if (post.mainImage?.asset?._ref) {
-			const assetRef: string = post.mainImage.asset._ref; // e.g., "image-abc123-200x200-png"
-			const assetId = assetRef.split("-").slice(0, 2).join("-"); // Extract "image-abc123"
+		// Begin transaction
+		const transaction = client.transaction();
 
-			try {
-				// Use client.delete to remove the asset by its ID
-				await client.delete(assetId);
-				console.log(`Deleted image asset: ${assetId}`);
-			} catch (assetError) {
-				console.error(`Failed to delete image asset ${assetId}:`, assetError);
-				// Continue to delete the post even if image deletion fails
-			}
+		// Delete image asset if it exists
+		if (post.mainImage?.asset?._ref) {
+			const assetRef: string = post.mainImage.asset._ref;
+			transaction.delete(assetRef);
 		}
 
 		// Delete the post document
-		await client.delete(postId);
-		console.log(`Deleted post: ${postId}`);
+		transaction.delete(postId);
+
+		// Commit the transaction
+		await transaction.commit();
 
 		return NextResponse.json({ success: true });
 	} catch (error: any) {
 		console.error("Delete error:", error);
+
+		if (error.isClientError && error.response) {
+			console.error(
+				"Client error details:",
+				JSON.stringify(error.response.body, null, 2)
+			);
+		}
+
 		return NextResponse.json(
 			{ error: "Failed to delete post" },
 			{ status: 500 }
