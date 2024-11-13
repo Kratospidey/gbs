@@ -1,4 +1,5 @@
 // src/app/posts/[slug]/page.tsx
+
 "use client";
 
 import client, { urlFor } from "@/lib/sanityClient";
@@ -41,7 +42,6 @@ interface Author {
 	name: string;
 	clerk_id?: string;
 	image?: {
-		// Changed from profile_picture to match Sanity schema
 		_type: "image";
 		asset: {
 			_ref: string;
@@ -71,7 +71,6 @@ const PostDetailPage = () => {
 
 	const isDesktop = useIsDesktop();
 
-	// Add a state for error handling
 	const [fetchError, setFetchError] = useState<string | null>(null);
 
 	const { toast } = useToast();
@@ -96,7 +95,7 @@ const PostDetailPage = () => {
             "author": {
               "name": author->name,
               "clerk_id": author->clerk_id,
-              "image": author->image, // Change profile_picture to image to match schema
+              "image": author->image,
             },
             tags,
             "estimatedReadingTime": round(length(body.content) / 5 / 180)
@@ -132,14 +131,27 @@ const PostDetailPage = () => {
 				setPost(data);
 
 				if (user && data?._id) {
-					const savedPostDoc = await client.fetch(
-						`*[_type == "savedPost" && user == $userId && $postId in posts[].post._ref][0]`,
-						{
-							userId: user.id,
-							postId: data._id,
-						}
+					// Fetch the author document for the current user
+					const author = await client.fetch(
+						`*[_type == "author" && clerk_id == $clerkId][0]`,
+						{ clerkId: user.id }
 					);
-					setIsSaved(!!savedPostDoc);
+
+					if (author) {
+						// Check if the post is saved
+						const savedPostDoc = await client.fetch(
+							`*[_type == "savedPost" && user._ref == $authorId && $postId in posts[].post._ref][0]`,
+							{
+								authorId: author._id,
+								postId: data._id,
+							}
+						);
+						setIsSaved(!!savedPostDoc);
+					} else {
+						setIsSaved(false);
+					}
+				} else {
+					setIsSaved(false);
 				}
 			} catch (error: any) {
 				console.error("Error fetching post:", error);
@@ -154,7 +166,7 @@ const PostDetailPage = () => {
 		if (slug) {
 			fetchPostAndSaveStatus();
 		}
-	}, [slug, user?.id, isSaved, user, router, toast]);
+	}, [slug, user?.id, user, router, toast]); // Removed 'isSaved' from dependencies
 
 	const scrollToTop = () => window.scrollTo({ top: 0, behavior: "smooth" });
 
@@ -178,10 +190,26 @@ const PostDetailPage = () => {
 		}
 
 		try {
+			// Fetch the author document for the current user
+			const author = await client.fetch(
+				`*[_type == "author" && clerk_id == $clerkId][0]`,
+				{ clerkId: user.id }
+			);
+
+			if (!author) {
+				toast({
+					title: "Error",
+					description: "User profile not found.",
+					variant: "destructive",
+				});
+				return;
+			}
+
+			// Check if a savedPost document exists for this user
 			const savedPostDoc = await client.fetch(
-				`*[_type == "savedPost" && user == $userId][0]`,
+				`*[_type == "savedPost" && user._ref == $authorId][0]`,
 				{
-					userId: user.id,
+					authorId: author._id,
 				}
 			);
 
@@ -191,6 +219,7 @@ const PostDetailPage = () => {
 				);
 
 				if (postIndex > -1) {
+					// Remove the post from saved posts
 					await client
 						.patch(savedPostDoc._id)
 						.unset([`posts[${postIndex}]`])
@@ -203,6 +232,7 @@ const PostDetailPage = () => {
 						variant: "default",
 					});
 				} else {
+					// Add the post to saved posts
 					await client
 						.patch(savedPostDoc._id)
 						.append("posts", [
@@ -211,7 +241,7 @@ const PostDetailPage = () => {
 								post: {
 									_type: "reference",
 									_ref: post._id,
-									_weak: true, // Add this line
+									_weak: true,
 								},
 								savedAt: new Date().toISOString(),
 							},
@@ -226,16 +256,20 @@ const PostDetailPage = () => {
 					});
 				}
 			} else {
+				// Create a new savedPost document for the user
 				await client.create({
 					_type: "savedPost",
-					user: user.id,
+					user: {
+						_type: "reference",
+						_ref: author._id,
+					},
 					posts: [
 						{
 							_key: nanoid(),
 							post: {
 								_type: "reference",
 								_ref: post._id,
-								_weak: true, // Add this line
+								_weak: true,
 							},
 							savedAt: new Date().toISOString(),
 						},

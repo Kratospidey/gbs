@@ -1,6 +1,6 @@
 // schemas/savedPost.ts
 
-import {defineType, defineField, StringRule, ReferenceRule, DatetimeRule} from 'sanity'
+import {defineType, defineField, ReferenceRule, DatetimeRule} from 'sanity'
 
 export default defineType({
   name: 'savedPost',
@@ -10,8 +10,9 @@ export default defineType({
     defineField({
       name: 'user',
       title: 'User',
-      type: 'string',
-      validation: (rule: StringRule) => rule.required(),
+      type: 'reference',
+      to: [{type: 'author'}],
+      validation: (rule: ReferenceRule) => rule.required(),
     }),
     defineField({
       name: 'posts',
@@ -28,7 +29,7 @@ export default defineType({
               title: 'Post',
               type: 'reference',
               to: [{type: 'post'}],
-              weak: true, // Ensure the reference is weak
+              weak: true,
               validation: (rule: ReferenceRule) => rule.required(),
             }),
             defineField({
@@ -45,15 +46,13 @@ export default defineType({
   ],
   preview: {
     select: {
-      title: 'posts[0].post.title',
-      media: 'posts[0].post.mainImage.asset',
+      userName: 'user.name', // Use dot notation to access the name
       savedAt: 'posts[0].savedAt',
     },
-    prepare(selection: {title?: string; media?: any; savedAt?: string}) {
-      const {title, media, savedAt} = selection
+    prepare(selection: {userName?: string; savedAt?: string}) {
+      const {userName, savedAt} = selection
       return {
-        title: title || 'Untitled Post',
-        media: media,
+        title: userName ? `${userName}'s saved posts` : 'Saved Posts',
         subtitle: `Saved at: ${savedAt ? new Date(savedAt).toLocaleString() : 'Unknown Date'}`,
       }
     },
