@@ -74,10 +74,64 @@ const config: Config = {
 					from: { height: "var(--radix-accordion-content-height)" },
 					to: { height: "0" },
 				},
+				moveHorizontal: {
+					"0%": {
+						transform: "translateX(-50%) translateY(-10%)",
+					},
+					"50%": {
+						transform: "translateX(50%) translateY(10%)",
+					},
+					"100%": {
+						transform: "translateX(-50%) translateY(-10%)",
+					},
+				},
+				moveInCircle: {
+					"0%": {
+						transform: "rotate(0deg)",
+					},
+					"50%": {
+						transform: "rotate(180deg)",
+					},
+					"100%": {
+						transform: "rotate(360deg)",
+					},
+				},
+				moveVertical: {
+					"0%": {
+						transform: "translateY(-50%)",
+					},
+					"50%": {
+						transform: "translateY(50%)",
+					},
+					"100%": {
+						transform: "translateY(-50%)",
+					},
+				},
+				rotateSmall: {
+					"0%": { transform: "rotate(0deg) scale(1)" },
+					"50%": { transform: "rotate(180deg) scale(1.1)" },
+					"100%": { transform: "rotate(360deg) scale(1)" },
+				},
+				moveXSmall: {
+					"0%, 100%": { transform: "translateX(-10%)" },
+					"50%": { transform: "translateX(10%)" },
+				},
+				gradientBackground: {
+					"0%, 100%": { "background-position": "0% 50%" },
+					"50%": { "background-position": "100% 50%" },
+				},
 			},
 			animation: {
 				"accordion-down": "accordion-down 0.2s ease-out",
 				"accordion-up": "accordion-up 0.2s ease-out",
+				first: "moveVertical 30s ease infinite",
+				second: "moveInCircle 20s reverse infinite",
+				third: "moveInCircle 40s linear infinite",
+				fourth: "moveHorizontal 40s ease infinite",
+				fifth: "moveInCircle 20s ease infinite",
+				"small-circle-rotation": "rotateSmall 15s linear infinite",
+				"small-circle-move-x": "moveXSmall 20s ease-in-out infinite",
+				"gradient-slow": "gradientBackground 15s ease infinite",
 			},
 			backdropBlur: {
 				xs: "2px",
@@ -95,6 +149,12 @@ const config: Config = {
 			width: {
 				6: "1.5rem", // 24px
 				5: "1.25rem", // 20px
+			},
+			backgroundSize: {
+				"size-200": "200% 200%",
+			},
+			backgroundImage: {
+				"gradient-animated": "linear-gradient(-45deg, #1e3a8a, #2563eb, #7c3aed, #22d3ee)",
 			},
 		},
 	},

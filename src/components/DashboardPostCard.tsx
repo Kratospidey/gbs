@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { CardBody, CardContainer, CardItem } from "./ui/3d-card";
 import { cn } from "@/lib/utils"; // Ensure you have a utility for className concatenation
+import { BackgroundGradientAnimation } from "./ui/background-gradient-animation";
 
 const commonCardBody = cn(`
   relative group/card 
@@ -132,14 +133,21 @@ const DashboardPostCard: React.FC<DashboardPostCardProps> = ({
 				>
 					Published on {new Date(post.publishedAt).toLocaleDateString()}
 				</CardItem>
-				<CardItem translateZ={100} className="w-full mt-4 h-48">
-					<Image
-						src={post.mainImageUrl || "/default-thumbnail.jpg"}
-						alt={post.title}
-						width={400}
-						height={200}
-						className="w-full h-full object-cover rounded-xl group-hover/card:shadow-xl"
-					/>
+				<CardItem
+					translateZ={100}
+					className="w-full mt-4 h-48 overflow-hidden rounded-xl relative"
+				>
+					{post.mainImageUrl ? (
+						<Image
+							src={post.mainImageUrl}
+							alt={post.title}
+							width={400}
+							height={200}
+							className="w-full h-full object-cover rounded-xl group-hover/card:shadow-xl"
+						/>
+					) : (
+						<BackgroundGradientAnimation className="gradient-animation" />
+					)}
 				</CardItem>
 				<div className="flex justify-around items-center mt-6">
 					{!isArchived && (
