@@ -19,6 +19,7 @@ import MarkdownEditor from "@/components/MarkdownEditor";
 import { Tag } from "@/components/Tag";
 import Image from "next/image";
 import DarkModeToggle from "@/components/DarkModeToggle";
+import { useToast } from "@/components/hooks/use-toast"; // Import useToast
 
 interface Post {
 	_id: string;
@@ -41,7 +42,10 @@ interface Post {
 	publishedAt: string;
 	tags: string[];
 	status: string;
-	slug: string;
+	slug: {
+		_type: "slug";
+		current: string;
+	};
 	_updatedAt: string;
 }
 
@@ -54,6 +58,7 @@ interface EditPostProps {
 const EditPost: React.FC<EditPostProps> = ({ params }) => {
 	const { user, isLoaded } = useUser();
 	const router = useRouter();
+	const { toast } = useToast(); // Get the toast function
 
 	// State declarations
 	const [title, setTitle] = useState<string>("");
@@ -112,18 +117,26 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 						setExistingMainImageUrl(fetchedPost.mainImage.asset.url);
 					}
 				} else {
-					alert("Post not found.");
+					toast({
+						title: "Error",
+						description: "Post not found.",
+						variant: "destructive",
+					});
 					router.push("/");
 				}
 			} catch (error) {
 				console.error("Error fetching post:", error);
-				alert("Failed to fetch post");
+				toast({
+					title: "Error",
+					description: "Failed to fetch post.",
+					variant: "destructive",
+				});
 				router.push("/posts");
 			}
 		};
 
 		fetchPost();
-	}, [params.slug, router]);
+	}, [params.slug, router, toast]);
 
 	// Handle tag input
 	const handleTagInput = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -139,7 +152,11 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 
 	const handleSubmit = async (action: string) => {
 		if (!user) {
-			alert("You need to be logged in to edit a post.");
+			toast({
+				title: "Error",
+				description: "You need to be logged in to edit a post.",
+				variant: "destructive",
+			});
 			return;
 		}
 
@@ -173,9 +190,12 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 			);
 
 			if (existingPostWithSlug) {
-				alert(
-					"A post with this title already exists. Please choose a different title."
-				);
+				toast({
+					title: "Error",
+					description:
+						"A post with this title already exists. Please choose a different title.",
+					variant: "destructive",
+				});
 				setIsLoading(false);
 				return;
 			}
@@ -196,7 +216,7 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 			// Update the post in Sanity
 			const updatedPost: Partial<Post> = {
 				title: title,
-				slug: slug, // Update the slug
+				slug: { _type: "slug", current: slug }, // Update the slug
 				body: {
 					_type: "markdown",
 					content: content,
@@ -216,11 +236,18 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 			};
 
 			await client.patch(postId).set(updatedPost).commit();
-			alert("Post updated successfully!");
+			toast({
+				title: "Success",
+				description: "Post updated successfully!",
+			});
 			router.push(`/posts/${slug}`); // Redirect to the new slug
 		} catch (error: any) {
 			console.error("Failed to update post in Sanity:", error);
-			alert("Failed to update post. Please try again.");
+			toast({
+				title: "Error",
+				description: "Failed to update post. Please try again.",
+				variant: "destructive",
+			});
 		} finally {
 			setIsLoading(false);
 		}

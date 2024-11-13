@@ -20,10 +20,12 @@ import { Tag } from "@/components/Tag";
 import { useRouter } from "next/navigation";
 import { Icons } from "@/components/icons.tsx";
 import { v4 as uuidv4 } from "uuid";
+import { useToast } from "@/components/hooks/use-toast"; // Import useToast
 
 const CreatePost: React.FC = () => {
 	const { user, isLoaded } = useUser();
 	const router = useRouter();
+	const { toast } = useToast(); // Get the toast function
 
 	const [title, setTitle] = useState<string>("");
 	const [content, setContent] = useState<string>("");
@@ -65,7 +67,11 @@ const CreatePost: React.FC = () => {
 
 	const handleSubmit = async (status: string) => {
 		if (!user) {
-			alert("You need to be logged in to create a post.");
+			toast({
+				title: "Error",
+				description: "You need to be logged in to create a post.",
+				variant: "destructive",
+			});
 			return;
 		}
 
@@ -99,9 +105,12 @@ const CreatePost: React.FC = () => {
 			);
 
 			if (existingPostWithSlug) {
-				alert(
-					"A post with this title already exists. Please choose a different title."
-				);
+				toast({
+					title: "Error",
+					description:
+						"A post with this title already exists. Please choose a different title.",
+					variant: "destructive",
+				});
 				setIsLoading(false);
 				return;
 			}
@@ -177,10 +186,19 @@ const CreatePost: React.FC = () => {
 			};
 
 			await client.create(newPost);
+			toast({
+				title: "Success",
+				description: "Post created successfully!",
+			});
 			router.push("/dashboard");
 		} catch (error: any) {
 			console.error("Error creating post:", error);
-			alert(error.message || "Failed to create post. Please try again.");
+			toast({
+				title: "Error",
+				description:
+					error.message || "Failed to create post. Please try again.",
+				variant: "destructive",
+			});
 		} finally {
 			setIsLoading(false);
 		}

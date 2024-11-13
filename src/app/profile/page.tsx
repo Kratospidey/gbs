@@ -1,4 +1,3 @@
-// src/app/profile/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -9,13 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { toast } from "react-hot-toast";
-import { z } from "zod";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
 import { Icons } from "@/components/icons";
-
+import { z } from "zod";
 import {
 	Card,
 	CardContent,
@@ -24,18 +21,19 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/components/ui/card";
+import { useToast } from "@/components/hooks/use-toast"; // Import useToast
 
 // Types and validation schemas
 interface Profile {
 	username: string;
 	firstName: string;
 	lastName: string;
-	bio: string; // Changed to string for simpler handling
+	bio: string;
 	profilePicture: string | null;
 	githubUrl: string;
 	linkedinUrl: string;
 	customUrl: string;
-	email: string; // Added email
+	email: string;
 }
 
 const urlSchema = z.preprocess((arg) => {
@@ -48,6 +46,7 @@ const urlSchema = z.preprocess((arg) => {
 const ProfilePage: React.FC = () => {
 	const { user, isLoaded } = useUser();
 	const router = useRouter();
+	const { toast } = useToast(); // Get the toast function
 
 	// State declarations
 	const [profile, setProfile] = useState<Profile>({
@@ -59,7 +58,7 @@ const ProfilePage: React.FC = () => {
 		githubUrl: "",
 		linkedinUrl: "",
 		customUrl: "",
-		email: "", // Initialize email
+		email: "",
 	});
 	const [existingUser, setExistingUser] = useState<any>(null);
 	const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -110,16 +109,23 @@ const ProfilePage: React.FC = () => {
 						website: "",
 					});
 					setExistingUser(newUser);
-					toast.success("Account initialized in Sanity.");
+					toast({
+						title: "Success",
+						description: "Account initialized in Sanity.",
+					});
 				}
 			} catch (error) {
-				toast.error("Error syncing user with Sanity.");
+				toast({
+					title: "Error",
+					description: "Error syncing user with Sanity.",
+					variant: "destructive",
+				});
 				console.error("Sanity sync error:", error);
 			}
 		};
 
 		syncUserWithSanity();
-	}, [user?.id]); // Only depend on user ID
+	}, [user?.id, toast]);
 
 	// Load profile data from Sanity
 	useEffect(() => {
@@ -128,16 +134,16 @@ const ProfilePage: React.FC = () => {
 
 			try {
 				const query = `*[_type == "author" && clerk_id == $clerkId][0]{
-		  name,
-		  firstName,
-		  lastName,
-		  bio,
-		  image,
-		  github,
-		  linkedin,
-		  website,
-		  email // Fetch email if stored in Sanity
-		}`;
+          name,
+          firstName,
+          lastName,
+          bio,
+          image,
+          github,
+          linkedin,
+          website,
+          email
+        }`;
 				const params = { clerkId: user.id };
 				const data = await client.fetch(query, params);
 
@@ -158,7 +164,7 @@ const ProfilePage: React.FC = () => {
 						githubUrl: data.github || "",
 						linkedinUrl: data.linkedin || "",
 						customUrl: data.website || "",
-						email: data.email || user.primaryEmailAddress?.emailAddress || "", // Set email from Sanity or Clerk
+						email: data.email || user.primaryEmailAddress?.emailAddress || "",
 					});
 				} else {
 					// Set email from Clerk since no data exists in Sanity
@@ -168,13 +174,17 @@ const ProfilePage: React.FC = () => {
 					}));
 				}
 			} catch (error) {
-				toast.error("Error loading profile from Sanity.");
+				toast({
+					title: "Error",
+					description: "Error loading profile from Sanity.",
+					variant: "destructive",
+				});
 				console.error(error);
 			}
 		};
 
 		loadProfile();
-	}, [user?.id]); // Only depend on user ID
+	}, [user?.id, toast]);
 
 	// Handle file selection
 	const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -201,7 +211,11 @@ const ProfilePage: React.FC = () => {
 	// Handle profile update
 	const handleUpdateProfile = async () => {
 		if (!user?.id || !existingUser) {
-			toast.error("User not authenticated.");
+			toast({
+				title: "Error",
+				description: "User not authenticated.",
+				variant: "destructive",
+			});
 			return;
 		}
 
@@ -220,7 +234,11 @@ const ProfilePage: React.FC = () => {
 			);
 
 			if (hasUrlErrors) {
-				toast.error("Please enter valid URLs");
+				toast({
+					title: "Error",
+					description: "Please enter valid URLs.",
+					variant: "destructive",
+				});
 				setIsLoading(false);
 				return;
 			}
@@ -272,12 +290,19 @@ const ProfilePage: React.FC = () => {
 			// Update profile in Sanity
 			await client.patch(existingUser._id).set(sanitizedProfile).commit();
 
-			toast.success("Profile updated successfully!");
+			toast({
+				title: "Success",
+				description: "Profile updated successfully!",
+			});
 			setIsChanged(false);
 			setSelectedFile(null);
 			setPreviewUrl(null);
 		} catch (error: any) {
-			toast.error(error.message || "Error updating profile");
+			toast({
+				title: "Error",
+				description: error.message || "Error updating profile.",
+				variant: "destructive",
+			});
 			console.error("Error updating profile:", error);
 		} finally {
 			setIsLoading(false);
@@ -301,12 +326,17 @@ const ProfilePage: React.FC = () => {
 	}, [previewUrl]);
 
 	if (!isLoaded || !user) {
-		return <div>Loading...</div>;
+		return (
+			<div className="min-h-screen flex items-center justify-center">
+				<div className="text-lg text-gray-600 dark:text-gray-300">
+					Loading...
+				</div>
+			</div>
+		);
 	}
 
 	return (
 		<div className="container max-w-4xl mx-auto px-4 sm:px-6 py-6">
-			{/* Place the Toaster component at the root of your app */}
 			<div className="flex flex-col space-y-2 mb-8">
 				<h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
 					Profile Settings
