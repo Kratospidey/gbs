@@ -21,6 +21,8 @@ import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
 import remarkGfm from "remark-gfm";
 import { useToast } from "@/components/hooks/use-toast";
+import { BackgroundGradientAnimation } from "../../../components/ui/background-gradient-animation"; // Import the component
+import { cn } from "@/lib/utils"; // Ensure you have a utility for className concatenation
 
 interface Post {
 	_id: string;
@@ -370,15 +372,19 @@ const PostDetailPage = () => {
 		<>
 			{/* Hero Section */}
 			<div className="relative h-[50vh] w-full">
-				<div className="absolute inset-0">
-					<Image
-						src={urlFor(post.mainImage.asset.url).url()}
-						alt={post.title}
-						fill
-						className="w-full h-full object-cover"
-					/>
-					<div className="absolute inset-0 bg-black/50" />
-				</div>
+				{post.mainImage?.asset?.url ? (
+					<div className="absolute inset-0">
+						<Image
+							src={urlFor(post.mainImage.asset.url).url()}
+							alt={post.title}
+							fill
+							className="w-full h-full object-cover"
+						/>
+						<div className="absolute inset-0 bg-black/50" />
+					</div>
+				) : (
+					<BackgroundGradientAnimation className="absolute inset-0 rounded-xl" />
+				)}
 				<div className="absolute bottom-8 w-full flex justify-center px-4">
 					<TextGenerateEffect words={post.title} filter={true} />
 				</div>
@@ -506,15 +512,19 @@ const PostDetailPage = () => {
 			<>
 				{/* Hero Section */}
 				<div className="relative h-[50vh] w-full">
-					<div className="absolute inset-0">
-						<Image
-							src={urlFor(post.mainImage.asset.url).url()}
-							alt={post.title}
-							fill
-							className="w-full h-full object-cover"
-						/>
-						<div className="absolute inset-0 bg-zinc-950/50 backdrop-blur-[2px]" />
-					</div>
+					{post.mainImage?.asset?.url ? (
+						<div className="absolute inset-0">
+							<Image
+								src={urlFor(post.mainImage.asset.url).url()}
+								alt={post.title}
+								fill
+								className="w-full h-full object-cover"
+							/>
+							<div className="absolute inset-0 bg-zinc-950/50 backdrop-blur-[2px]" />
+						</div>
+					) : (
+						<BackgroundGradientAnimation className="absolute inset-0 rounded-xl" />
+					)}
 					<div className="absolute bottom-8 w-full flex justify-center px-4">
 						<TextGenerateEffect words={post.title} filter={true} />
 					</div>

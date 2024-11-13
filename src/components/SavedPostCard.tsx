@@ -7,11 +7,13 @@ import { useRouter } from "next/navigation";
 import { CardBody, CardContainer, CardItem } from "./ui/3d-card";
 import Link from "next/link";
 import { urlFor } from "@/lib/imageUrlBuilder";
+import { BackgroundGradientAnimation } from "./ui/background-gradient-animation";
+import { cn } from "@/lib/utils"; // Ensure you have a utility for className concatenation
 
 interface Author {
 	name: string;
 	image: string | null;
-	username?: string; // Make username optional since it might not be present
+	username?: string; // Optional username
 }
 
 interface SavedPost {
@@ -42,7 +44,7 @@ const SavedPostCard: React.FC<SavedPostCardProps> = ({ post }) => {
 
 	const imageUrl = postData.mainImage?.asset?._ref
 		? urlFor(postData.mainImage).url()
-		: "/default-thumbnail.jpg";
+		: null; // Set to null if no image
 
 	const handleView = () => {
 		router.push(`/posts/${postData.slug.current}`);
@@ -61,6 +63,7 @@ const SavedPostCard: React.FC<SavedPostCardProps> = ({ post }) => {
 	return (
 		<CardContainer className="inter-var">
 			<CardBody className="relative group/card bg-zinc-950/90 dark:hover:shadow-lg dark:hover:shadow-zinc-200/[0.1] border-zinc-800 w-80 sm:w-[21rem] h-[28rem] rounded-lg p-6 border transition-colors">
+				{/* Post Title */}
 				<CardItem
 					translateZ={50}
 					className="text-xl font-semibold text-zinc-100 tracking-tight cursor-pointer"
@@ -69,6 +72,7 @@ const SavedPostCard: React.FC<SavedPostCardProps> = ({ post }) => {
 					{postData.title}
 				</CardItem>
 
+				{/* Author Information */}
 				<CardItem
 					as="p"
 					translateZ={60}
@@ -84,20 +88,30 @@ const SavedPostCard: React.FC<SavedPostCardProps> = ({ post }) => {
 					)}
 				</CardItem>
 
-				<CardItem translateZ={100} className="w-full mt-4 h-48">
-					<Image
-						src={imageUrl}
-						alt={postData.title}
-						width={400}
-						height={200}
-						className="w-full h-full object-cover rounded-md transition-all duration-300"
-						priority={true}
-						onError={(e) => {
-							(e.target as HTMLImageElement).src = "/default-thumbnail.jpg";
-						}}
-					/>
+				{/* Post Image or Gradient */}
+				<CardItem
+					translateZ={100}
+					className="w-full mt-4 h-48 overflow-hidden rounded-xl relative cursor-pointer"
+					onClick={handleView} // Make the entire image area clickable
+				>
+					{imageUrl ? (
+						<Image
+							src={imageUrl}
+							alt={postData.title}
+							width={400}
+							height={200}
+							className="w-full h-full object-cover rounded-xl group-hover/card:shadow-xl transition-all duration-300"
+							priority={true}
+							onError={(e) => {
+								(e.target as HTMLImageElement).src = "/default-thumbnail.jpg";
+							}}
+						/>
+					) : (
+						<BackgroundGradientAnimation className="rounded-xl" />
+					)}
 				</CardItem>
 
+				{/* Publication and Save Date */}
 				<div className="flex flex-col gap-2 mt-4">
 					<CardItem as="p" translateZ={40} className="text-zinc-400 text-xs">
 						Published: {new Date(postData.publishedAt).toLocaleDateString()}
@@ -107,7 +121,9 @@ const SavedPostCard: React.FC<SavedPostCardProps> = ({ post }) => {
 					</CardItem>
 				</div>
 
+				{/* Action Buttons */}
 				<div className="flex justify-between items-center mt-6">
+					{/* Read Post Link */}
 					<CardItem
 						translateZ={20}
 						as={Link}
@@ -116,6 +132,8 @@ const SavedPostCard: React.FC<SavedPostCardProps> = ({ post }) => {
 					>
 						Read Post →
 					</CardItem>
+
+					{/* View Author Button */}
 					{postData.author && (
 						<CardItem
 							translateZ={20}

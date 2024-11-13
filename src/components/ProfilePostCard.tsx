@@ -6,6 +6,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { CardBody, CardContainer, CardItem } from "./ui/3d-card";
 import { useRouter } from "next/navigation";
+import { BackgroundGradientAnimation } from "./ui/background-gradient-animation"; // Import the component
+import { cn } from "@/lib/utils"; // Ensure you have a utility for className concatenation
 
 interface Author {
 	username: string;
@@ -37,6 +39,13 @@ const ProfilePostCard: React.FC<ProfilePostCardProps> = ({ post }) => {
 		}
 	};
 
+	const handleAuthorClick = (e: React.MouseEvent) => {
+		e.stopPropagation();
+		if (post.author) {
+			router.push(`/profile/${post.author.username}`);
+		}
+	};
+
 	return (
 		<CardContainer className="inter-var">
 			<CardBody className="relative group/card bg-zinc-950/90 dark:hover:shadow-lg dark:hover:shadow-zinc-200/[0.1] border-zinc-800 w-80 sm:w-[21rem] min-h-[28rem] rounded-lg p-6 border transition-colors">
@@ -60,10 +69,7 @@ const ProfilePostCard: React.FC<ProfilePostCardProps> = ({ post }) => {
 						<>
 							{" · "}
 							<button
-								onClick={(e) => {
-									e.stopPropagation();
-									router.push(`/profile/${post.author!.username}`);
-								}}
+								onClick={handleAuthorClick}
 								className="text-zinc-300 hover:text-white transition-colors inline-block"
 							>
 								@{post.author.username}
@@ -72,15 +78,27 @@ const ProfilePostCard: React.FC<ProfilePostCardProps> = ({ post }) => {
 					)}
 				</CardItem>
 
-				{/* Image */}
-				<CardItem translateZ={100} className="w-full mt-4 h-48">
-					<Image
-						src={post.mainImageUrl || "/default-thumbnail.jpg"}
-						alt={post.title}
-						width={400}
-						height={200}
-						className="w-full h-full object-cover rounded-md transition-all duration-300"
-					/>
+				{/* Image or Gradient */}
+				<CardItem
+					translateZ={100}
+					className="w-full mt-4 h-48 overflow-hidden rounded-xl relative cursor-pointer"
+					onClick={handleView} // Make the entire image area clickable
+				>
+					{post.mainImageUrl ? (
+						<Image
+							src={post.mainImageUrl}
+							alt={post.title}
+							width={400}
+							height={200}
+							className="w-full h-full object-cover rounded-xl group-hover/card:shadow-xl transition-all duration-300"
+							priority={true}
+							onError={(e) => {
+								(e.target as HTMLImageElement).src = "/default-thumbnail.jpg";
+							}}
+						/>
+					) : (
+						<BackgroundGradientAnimation className="gradient-animation rounded-xl" />
+					)}
 				</CardItem>
 
 				{/* View More Link */}
@@ -100,13 +118,11 @@ const ProfilePostCard: React.FC<ProfilePostCardProps> = ({ post }) => {
 					<CardItem translateZ={20} className="mt-4">
 						<div className="flex flex-wrap gap-2">
 							{post.tags.map((tag) => (
-								<span
-									key={tag}
-									onClick={() => router.push(`/tag/${tag}`)}
-									className="cursor-pointer inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-800 text-zinc-200 hover:bg-zinc-700 hover:text-zinc-100 transition-colors"
-								>
-									{tag}
-								</span>
+								<Link href={`/tag/${tag}`} key={tag}>
+									<span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-zinc-800 text-zinc-200 hover:bg-zinc-700 transition-colors cursor-pointer">
+										{tag}
+									</span>
+								</Link>
 							))}
 						</div>
 					</CardItem>
