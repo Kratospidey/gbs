@@ -47,13 +47,14 @@ export default defineType({
   preview: {
     select: {
       userName: 'user.name', // Use dot notation to access the name
-      savedAt: 'posts[0].savedAt',
+      posts: 'posts',
     },
-    prepare(selection: {userName?: string; savedAt?: string}) {
-      const {userName, savedAt} = selection
+    prepare(selection: {userName?: string; posts?: any[]}) {
+      const {userName, posts} = selection
+      const postCount = posts ? posts.length : 0
       return {
         title: userName ? `${userName}'s saved posts` : 'Saved Posts',
-        subtitle: `Saved at: ${savedAt ? new Date(savedAt).toLocaleString() : 'Unknown Date'}`,
+        subtitle: `Saved ${postCount} ${postCount === 1 ? 'post' : 'posts'}`,
       }
     },
   },
