@@ -475,20 +475,25 @@ const PostDetailPage = () => {
 				<div className="mt-8">
 					<section id="comments" className="prose dark:prose-invert">
 						<h2>Comments</h2>
-						<Giscus
-							repo={
-								process.env.NEXT_PUBLIC_GISCUS_REPO! as `${string}/${string}`
-							}
-							repoId={process.env.NEXT_PUBLIC_GISCUS_REPO_ID!}
-							category={process.env.NEXT_PUBLIC_GISCUS_CATEGORY!}
-							categoryId={process.env.NEXT_PUBLIC_GISCUS_CATEGORY_ID!}
-							mapping="pathname"
-							reactionsEnabled="1"
-							emitMetadata="0"
-							theme={process.env.NEXT_PUBLIC_GISCUS_THEME!}
-							lang={process.env.NEXT_PUBLIC_GISCUS_LANG!}
-							loading="lazy"
-						/>
+						{post && (
+							<Giscus
+								repo={
+									process.env.NEXT_PUBLIC_GISCUS_REPO! as `${string}/${string}`
+								}
+								repoId={process.env.NEXT_PUBLIC_GISCUS_REPO_ID!}
+								category={process.env.NEXT_PUBLIC_GISCUS_CATEGORY!}
+								categoryId={process.env.NEXT_PUBLIC_GISCUS_CATEGORY_ID!}
+								mapping="specific"
+								term={post._id} // Use the post's unique ID
+								strict="1" // Optional: Set strict matching
+								reactionsEnabled="1"
+								emitMetadata="0"
+								inputPosition="top" // Matches 'data-input-position="top"'
+								theme="dark"
+								lang="en"
+								loading="lazy"
+							/>
+						)}
 					</section>
 				</div>
 			</div>
@@ -619,11 +624,14 @@ const PostDetailPage = () => {
 								repoId={process.env.NEXT_PUBLIC_GISCUS_REPO_ID!}
 								category={process.env.NEXT_PUBLIC_GISCUS_CATEGORY!}
 								categoryId={process.env.NEXT_PUBLIC_GISCUS_CATEGORY_ID!}
-								mapping="pathname"
+								mapping="specific"
+								term={post._id} // Use the post's unique ID
+								strict="1" // Optional: Set strict matching
 								reactionsEnabled="1"
 								emitMetadata="0"
-								theme={process.env.NEXT_PUBLIC_GISCUS_THEME!}
-								lang={process.env.NEXT_PUBLIC_GISCUS_LANG!}
+								inputPosition="top" // Matches 'data-input-position="top"'
+								theme="dark"
+								lang="en"
 								loading="lazy"
 							/>
 						</section>

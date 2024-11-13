@@ -1,4 +1,3 @@
-// src/app/posts/create/page.tsx
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -20,8 +19,6 @@ import TipTapEditor from "@/components/MarkdownEditor";
 import { Tag } from "@/components/Tag";
 import { useRouter } from "next/navigation";
 import { Icons } from "@/components/icons.tsx";
-
-// Import UUID library to generate unique IDs
 import { v4 as uuidv4 } from "uuid";
 
 const CreatePost: React.FC = () => {
@@ -90,6 +87,25 @@ const CreatePost: React.FC = () => {
 		setIsLoading(true);
 
 		try {
+			const slug = title
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, "-")
+				.replace(/(^-|-$)/g, "");
+
+			// Slug Uniqueness Check
+			const existingPostWithSlug = await client.fetch(
+				`*[_type == "post" && slug.current == $slug][0]`,
+				{ slug }
+			);
+
+			if (existingPostWithSlug) {
+				alert(
+					"A post with this title already exists. Please choose a different title."
+				);
+				setIsLoading(false);
+				return;
+			}
+
 			let imageAsset = null;
 			if (mainImage) {
 				imageAsset = await client.assets.upload("image", mainImage, {
@@ -130,11 +146,6 @@ const CreatePost: React.FC = () => {
 				await client.create(authorDoc);
 			}
 
-			const slug = title
-				.toLowerCase()
-				.replace(/[^a-z0-9]+/g, "-")
-				.replace(/(^-|-$)/g, "");
-
 			// Set the final status
 			const finalStatus = status === "published" ? "pending" : status;
 
@@ -143,9 +154,9 @@ const CreatePost: React.FC = () => {
 				_type: "post",
 				title,
 				slug: { _type: "slug", current: slug },
-				body: { 
+				body: {
 					_type: "markdown",
-					content: content // Content from TipTapEditor should already be markdown
+					content: content, // Content from TipTapEditor should already be markdown
 				},
 				author: {
 					_type: "reference",

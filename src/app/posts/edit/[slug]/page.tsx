@@ -1,4 +1,3 @@
-// src/app/posts/edit/[slug]/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -42,6 +41,7 @@ interface Post {
 	publishedAt: string;
 	tags: string[];
 	status: string;
+	slug: string;
 	_updatedAt: string;
 }
 
@@ -64,7 +64,7 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 	const [postId, setPostId] = useState<string>("");
 	const [tags, setTags] = useState<string[]>([]);
 	const [tagInput, setTagInput] = useState("");
-	const [currentStatus, setCurrentStatus] = useState<string>("draft"); // Added state for current status
+	const [currentStatus, setCurrentStatus] = useState<string>("draft");
 	const [errors, setErrors] = useState<{ title?: string; content?: string }>(
 		{}
 	);
@@ -82,30 +82,30 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 			try {
 				const fetchedPost = await client.fetch(
 					`*[_type == "post" && slug.current == $slug][0] {
-    _id,
-    title,
-    body {
-      _type,
-      content
-    },
-    status,
-    mainImage {
-      asset-> {
-        _id,
-        url
-      }
-    },
-    tags,
-    "slug": slug.current,
-    _updatedAt
-  }`,
+            _id,
+            title,
+            body {
+              _type,
+              content
+            },
+            status,
+            mainImage {
+              asset-> {
+                _id,
+                url
+              }
+            },
+            tags,
+            "slug": slug.current,
+            _updatedAt
+          }`,
 					{ slug: params.slug }
 				);
 
 				if (fetchedPost) {
 					setPostId(fetchedPost._id);
 					setTitle(fetchedPost.title || "");
-					setContent(fetchedPost.body.content || ""); // Access content field
+					setContent(fetchedPost.body.content || "");
 					setTags(fetchedPost.tags || []);
 					setCurrentStatus(fetchedPost.status || "draft");
 					if (fetchedPost.mainImage?.asset?.url) {
@@ -161,6 +161,25 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 		setIsLoading(true);
 
 		try {
+			const slug = title
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, "-")
+				.replace(/(^-|-$)/g, "");
+
+			// Slug Uniqueness Check (Excluding Current Post)
+			const existingPostWithSlug = await client.fetch(
+				`*[_type == "post" && slug.current == $slug && _id != $postId][0]`,
+				{ slug, postId }
+			);
+
+			if (existingPostWithSlug) {
+				alert(
+					"A post with this title already exists. Please choose a different title."
+				);
+				setIsLoading(false);
+				return;
+			}
+
 			let newImageAsset = null;
 
 			// Handle main image upload if a new image is selected
@@ -177,6 +196,7 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 			// Update the post in Sanity
 			const updatedPost: Partial<Post> = {
 				title: title,
+				slug: slug, // Update the slug
 				body: {
 					_type: "markdown",
 					content: content,
@@ -197,7 +217,7 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 
 			await client.patch(postId).set(updatedPost).commit();
 			alert("Post updated successfully!");
-			router.push(`/posts/${params.slug}`);
+			router.push(`/posts/${slug}`); // Redirect to the new slug
 		} catch (error: any) {
 			console.error("Failed to update post in Sanity:", error);
 			alert("Failed to update post. Please try again.");
