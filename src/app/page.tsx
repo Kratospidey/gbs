@@ -2,7 +2,6 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import ThreeDPostCard from "@/components/ThreeDPostCard";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
@@ -27,13 +26,12 @@ interface Post {
 	slug: string;
 	publishedAt: string;
 	mainImageUrl?: string;
-	status: "pending" | "published" | "draft" | "archived";
+	status: "published" | "pending" | "draft" | "archived";
 	tags?: string[];
 	author?: Author;
 }
 
 const HomePage: React.FC = () => {
-	const router = useRouter();
 	const [posts, setPosts] = useState<Post[]>([]);
 	const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 	const [tagFilter, setTagFilter] = useState<string>("");
@@ -55,7 +53,7 @@ const HomePage: React.FC = () => {
 					params.append("tags", debouncedTagFilter);
 				}
 
-				const response = await fetch(`/api/posts?${params.toString()}`);
+				const response = await fetch(`/api/posts?${params.toString()}`); // Changed endpoint
 				const data = await response.json();
 
 				if (response.ok) {
@@ -174,7 +172,6 @@ const HomePage: React.FC = () => {
 						{posts.map((post) => (
 							<div key={post._id}>
 								<ThreeDPostCard post={post} />
-							
 							</div>
 						))}
 					</div>
