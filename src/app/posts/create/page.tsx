@@ -1,3 +1,5 @@
+// src/app/create/page.tsx
+
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -33,9 +35,11 @@ const CreatePost: React.FC = () => {
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [tags, setTags] = useState<string[]>([]);
 	const [tagInput, setTagInput] = useState("");
-	const [errors, setErrors] = useState<{ title?: string; content?: string }>(
-		{}
-	);
+	const [errors, setErrors] = useState<{
+		title?: string;
+		tags?: string;
+		content?: string;
+	}>({});
 
 	useEffect(() => {
 		if (isLoaded && !user) {
@@ -58,8 +62,17 @@ const CreatePost: React.FC = () => {
 		if (e.key === "Enter" || e.key === ",") {
 			e.preventDefault();
 			const tag = tagInput.trim().toLowerCase();
+			const tagRegex = /^[A-Za-z0-9-]+$/;
 			if (tag && !tags.includes(tag)) {
-				setTags([...tags, tag]);
+				if (tagRegex.test(tag)) {
+					setTags([...tags, tag]);
+					setErrors((prev) => ({ ...prev, tags: undefined }));
+				} else {
+					setErrors((prev) => ({
+						...prev,
+						tags: "Tags can only contain alphanumeric characters and hyphens.",
+					}));
+				}
 			}
 			setTagInput("");
 		}
@@ -76,11 +89,25 @@ const CreatePost: React.FC = () => {
 		}
 
 		setErrors({});
-		const newErrors: { title?: string; content?: string } = {};
+		const newErrors: { title?: string; tags?: string; content?: string } = {};
 
+		const titleRegex = /^[A-Za-z0-9- ]+$/;
 		if (!title.trim()) {
 			newErrors.title = "Title is required";
+		} else if (!titleRegex.test(title)) {
+			newErrors.title =
+				"Title can only contain alphanumeric characters and hyphens.";
 		}
+
+		const tagRegex = /^[A-Za-z0-9-]+$/;
+		for (const tag of tags) {
+			if (!tagRegex.test(tag)) {
+				newErrors.tags =
+					"All tags must contain only alphanumeric characters and hyphens.";
+				break;
+			}
+		}
+
 		if (!content.trim()) {
 			newErrors.content = "Content is required";
 		}
@@ -95,7 +122,7 @@ const CreatePost: React.FC = () => {
 		try {
 			const slug = title
 				.toLowerCase()
-				.replace(/[^a-z0-9]+/g, "-")
+				.replace(/[^a-z0-9-]+/g, "-")
 				.replace(/(^-|-$)/g, "");
 
 			// Slug Uniqueness Check
@@ -305,6 +332,9 @@ const CreatePost: React.FC = () => {
 							placeholder="Add tags (press Enter or comma to add)"
 							className="h-10 border-zinc-200 dark:border-zinc-800"
 						/>
+						{errors.tags && (
+							<p className="text-sm text-red-500">{errors.tags}</p>
+						)}
 					</div>
 				</CardContent>
 

@@ -14,7 +14,7 @@ export async function GET(
             clerk_id,
             _id,
             _updatedAt,
-            name, // Username field
+            name,
             firstName,
             lastName,
             bio,
@@ -46,7 +46,7 @@ export async function GET(
             title,
             "slug": slug.current,
             publishedAt,
-            "mainImageUrl": coalesce(mainImage.asset->url, null), // Set to null if no image
+            "mainImageUrl": coalesce(mainImage.asset->url, null),
             status,
             tags,
             author->{
@@ -59,7 +59,7 @@ export async function GET(
 
 		const posts = await client.fetch(postsQuery, { authorId: author._id });
 
-		console.log("API: Fetched posts:", posts.length);
+		console.log("API: Fetched posts:", posts);
 
 		// Enrich posts with author information
 		const enrichedPosts = posts.map((post: any) => ({
@@ -67,7 +67,7 @@ export async function GET(
 			title: post.title,
 			slug: post.slug,
 			publishedAt: post.publishedAt,
-			mainImageUrl: post.mainImageUrl || null, // Remove fallback
+			mainImageUrl: post.mainImageUrl || null,
 			status: post.status,
 			tags: post.tags || [],
 			author: {
@@ -100,13 +100,14 @@ export async function GET(
 		};
 
 		console.log("API: User data prepared successfully:", user);
+		console.log("API: Enriched Posts:", enrichedPosts);
 
 		return NextResponse.json(
 			{ user: user, posts: enrichedPosts },
 			{
 				status: 200,
 				headers: {
-					"Cache-Control": "no-store", // Prevent caching of the response
+					"Cache-Control": "no-store",
 				},
 			}
 		);

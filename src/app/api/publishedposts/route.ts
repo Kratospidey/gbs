@@ -1,4 +1,4 @@
-// src/app/api/posts/route.ts
+// src/app/api/publishedposts/route.ts
 
 import { groq } from "next-sanity";
 import client from "@/lib/sanityClient";
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
     status,
     tags,
     author->{
-      username,
+      name,
       firstName,
       lastName
     }

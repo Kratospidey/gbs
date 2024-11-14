@@ -1,3 +1,5 @@
+// src/app/edit/page.tsx
+
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -19,7 +21,7 @@ import MarkdownEditor from "@/components/MarkdownEditor";
 import { Tag } from "@/components/Tag";
 import Image from "next/image";
 import DarkModeToggle from "@/components/DarkModeToggle";
-import { useToast } from "@/components/hooks/use-toast"; // Import useToast
+import { useToast } from "@/components/hooks/use-toast";
 
 interface Post {
 	_id: string;
@@ -58,7 +60,7 @@ interface EditPostProps {
 const EditPost: React.FC<EditPostProps> = ({ params }) => {
 	const { user, isLoaded } = useUser();
 	const router = useRouter();
-	const { toast } = useToast(); // Get the toast function
+	const { toast } = useToast();
 
 	// State declarations
 	const [title, setTitle] = useState<string>("");
@@ -70,9 +72,11 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 	const [tags, setTags] = useState<string[]>([]);
 	const [tagInput, setTagInput] = useState("");
 	const [currentStatus, setCurrentStatus] = useState<string>("draft");
-	const [errors, setErrors] = useState<{ title?: string; content?: string }>(
-		{}
-	);
+	const [errors, setErrors] = useState<{
+		title?: string;
+		content?: string;
+		tags?: string;
+	}>({});
 
 	// Auth check effect
 	useEffect(() => {
@@ -87,23 +91,23 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 			try {
 				const fetchedPost = await client.fetch(
 					`*[_type == "post" && slug.current == $slug][0] {
-            _id,
-            title,
-            body {
-              _type,
-              content
-            },
-            status,
-            mainImage {
-              asset-> {
-                _id,
-                url
-              }
-            },
-            tags,
-            "slug": slug.current,
-            _updatedAt
-          }`,
+          _id,
+          title,
+          body {
+            _type,
+            content
+          },
+          status,
+          mainImage {
+            asset-> {
+              _id,
+              url
+            }
+          },
+          tags,
+          "slug": slug.current,
+          _updatedAt
+        }`,
 					{ slug: params.slug }
 				);
 
@@ -143,8 +147,17 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 		if (e.key === "Enter" || e.key === ",") {
 			e.preventDefault();
 			const tag = tagInput.trim().toLowerCase();
+			const tagRegex = /^[A-Za-z0-9-]+$/;
 			if (tag && !tags.includes(tag)) {
-				setTags([...tags, tag]);
+				if (tagRegex.test(tag)) {
+					setTags([...tags, tag]);
+					setErrors((prev) => ({ ...prev, tags: undefined }));
+				} else {
+					setErrors((prev) => ({
+						...prev,
+						tags: "Tags can only contain alphanumeric characters and hyphens.",
+					}));
+				}
 			}
 			setTagInput("");
 		}
@@ -161,11 +174,25 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 		}
 
 		setErrors({});
-		const newErrors: { [key: string]: string } = {};
+		const newErrors: { title?: string; content?: string; tags?: string } = {};
 
+		const titleRegex = /^[A-Za-z0-9- ]+$/;
 		if (!title.trim()) {
 			newErrors.title = "Title is required";
+		} else if (!titleRegex.test(title)) {
+			newErrors.title =
+				"Title can only contain alphanumeric characters and hyphens.";
 		}
+
+		const tagRegex = /^[A-Za-z0-9-]+$/;
+		for (const tag of tags) {
+			if (!tagRegex.test(tag)) {
+				newErrors.tags =
+					"All tags must contain only alphanumeric characters and hyphens.";
+				break;
+			}
+		}
+
 		if (!content.trim()) {
 			newErrors.content = "Content is required";
 		}
@@ -180,7 +207,7 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 		try {
 			const slug = title
 				.toLowerCase()
-				.replace(/[^a-z0-9]+/g, "-")
+				.replace(/[^a-z0-9-]+/g, "-")
 				.replace(/(^-|-$)/g, "");
 
 			// Slug Uniqueness Check (Excluding Current Post)
@@ -364,8 +391,13 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 							onChange={(e) => setTagInput(e.target.value)}
 							onKeyDown={handleTagInput}
 							placeholder="Add tags (press Enter or comma to add)"
-							className="h-10 border-zinc-200 dark:border-zinc-800"
+							className={`h-10 border-zinc-200 dark:border-zinc-800 ${
+								errors.tags ? "border-red-500" : ""
+							}`}
 						/>
+						{errors.tags && (
+							<p className="text-sm text-red-500">{errors.tags}</p>
+						)}
 					</div>
 				</CardContent>
 
