@@ -360,19 +360,20 @@ const ProfilePage: React.FC = () => {
 				<CardContent className="space-y-6">
 					{/* Profile Picture */}
 					<div className="flex flex-col items-center gap-4">
-						<Image
-							src={
-								previewUrl || profile.profilePicture || "/default-avatar.png"
-							}
-							width={100}
-							height={100}
-							alt="Profile Picture"
-							className="rounded-full object-cover"
-							onError={(e) => {
-								(e.currentTarget as HTMLImageElement).src =
-									"/default-avatar.png";
-							}}
-						/>
+						<div className="w-24 h-24 relative rounded-full overflow-hidden">
+							<Image
+								src={
+									previewUrl || profile.profilePicture || "/default-avatar.png"
+								}
+								alt="Profile Picture"
+								layout="fill"
+								objectFit="cover"
+								onError={(e) => {
+									(e.currentTarget as HTMLImageElement).src =
+										"/default-avatar.png";
+								}}
+							/>
+						</div>
 						<Input
 							type="file"
 							accept="image/*"

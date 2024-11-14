@@ -14,7 +14,7 @@ import { useToast } from "@/components/hooks/use-toast";
 interface UserProfile {
 	firstName: string;
 	lastName: string;
-	bio: string;
+	bio: any[]; // Updated to match the API response
 	profilePicture?: string;
 	github?: string;
 	linkedin?: string;
@@ -51,25 +51,26 @@ const UserProfilePage = () => {
 		const fetchProfile = async () => {
 			try {
 				// Fetch user profile information
-				const resUser = await fetch(`/api/profile/${username}`);
+				const resUser = await fetch(`/api/users?username=${username}`);
 				const userData = await resUser.json();
 
 				if (!resUser.ok) throw new Error(userData.error);
 
 				setUser({
-					...userData.user,
-					firstName: userData.user.firstName || "",
-					lastName: userData.user.lastName || "",
-					email: userData.user.email || "",
+					...userData.user.user,
+					firstName: userData.user.user.firstName || "",
+					lastName: userData.user.user.lastName || "",
+					email: userData.user.user.email || "",
+					profilePicture: userData.user.user.imageUrl || "",
 				});
 
-				// Fetch all posts and filter by the author’s username
+				// Fetch all posts
 				const resPosts = await fetch(`/api/posts`);
 				const postsData = await resPosts.json();
 
 				if (!resPosts.ok) throw new Error("Failed to fetch posts.");
 
-				// Filter posts by author’s username
+				// Filter posts by author's username
 				const filteredPosts: UserPost[] = postsData.posts
 					.filter((post: any) => post.author.username === username)
 					.map((post: any) => ({
@@ -139,13 +140,18 @@ const UserProfilePage = () => {
 
 					<div className="space-y-4">
 						<div>
-							<h2 className="text-3xl font-bold text-foreground">{`${user.firstName || "First"} ${
-								user.lastName || "Last"
-							}`}</h2>
+							<h2 className="text-3xl font-bold text-foreground">{`${user.firstName || "First"} ${user.lastName || "Last"}`}</h2>
 							<p className="text-muted-foreground">@{user.name}</p>
 						</div>
 
-						<p className="text-foreground">{user.bio}</p>
+						{/* Render bio properly */}
+						<div className="text-foreground">
+							{user.bio.map((block) => (
+								<p key={block._key}>
+									{block.children.map((child: any) => child.text).join("")}
+								</p>
+							))}
+						</div>
 
 						<div className="flex gap-3">
 							{user.github && (
@@ -154,15 +160,8 @@ const UserProfilePage = () => {
 										variant="outline"
 										size="icon"
 										className="text-zinc-500 hover:text-zinc-700 p-2"
-										asChild
 									>
-										<Link
-											href={user.github}
-											target="_blank"
-											rel="noopener noreferrer"
-										>
-											<FaGithub className="h-5 w-5" />
-										</Link>
+										<FaGithub className="h-5 w-5" />
 									</Button>
 								</LinkPreview>
 							)}
@@ -173,15 +172,8 @@ const UserProfilePage = () => {
 										variant="outline"
 										size="icon"
 										className="text-zinc-500 hover:text-zinc-700 p-2"
-										asChild
 									>
-										<Link
-											href={user.linkedin}
-											target="_blank"
-											rel="noopener noreferrer"
-										>
-											<FaLinkedin className="h-5 w-5" />
-										</Link>
+										<FaLinkedin className="h-5 w-5" />
 									</Button>
 								</LinkPreview>
 							)}
@@ -192,15 +184,8 @@ const UserProfilePage = () => {
 										variant="outline"
 										size="icon"
 										className="text-zinc-500 hover:text-zinc-700 p-2"
-										asChild
 									>
-										<Link
-											href={user.website}
-											target="_blank"
-											rel="noopener noreferrer"
-										>
-											<FaGlobe className="h-5 w-5" />
-										</Link>
+										<FaGlobe className="h-5 w-5" />
 									</Button>
 								</LinkPreview>
 							)}
