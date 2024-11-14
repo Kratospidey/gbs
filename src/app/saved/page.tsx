@@ -10,22 +10,16 @@ import SavedPostsList from "@/components/SavedPostsList";
 
 interface Author {
 	name: string;
-	image: any; // Update this type based on your image structure
-}
-
-interface Category {
-	title: string;
-	description: string;
+	image: any;
 }
 
 interface Post {
 	_id: string;
 	title: string;
-	slug: any; // Update this type based on your slug structure
-	mainImage: any; // Update this type based on your image structure
+	slug: any;
+	mainImage: any;
 	description: string;
 	author: Author;
-	categories: Category[];
 	publishedAt: string;
 }
 
@@ -39,7 +33,7 @@ interface SavedPostsData {
 }
 
 const query = groq`
-  *[_type == "savedPost" && user == $userId][0]{
+  *[_type == "savedPost" && user->clerk_id == $clerkId][0]{
     posts[]{
       post->{
         _id,
@@ -51,15 +45,12 @@ const query = groq`
           name,
           image
         },
-        categories[]->{
-          title,
-          description
-        },
         publishedAt
       },
       savedAt
     }
-  }`;
+  }
+`;
 
 export default function SavedPostsPage() {
 	const [savedPosts, setSavedPosts] = useState<SavedPostsData | null>(null);
@@ -77,7 +68,7 @@ export default function SavedPostsPage() {
 		const fetchSavedPosts = async () => {
 			if (!user) return;
 			try {
-				const posts = await client.fetch(query, { userId: user.id });
+				const posts = await client.fetch(query, { clerkId: user.id });
 				setSavedPosts(posts);
 			} catch (error) {
 				console.error("Error fetching saved posts:", error);
@@ -88,7 +79,6 @@ export default function SavedPostsPage() {
 		fetchSavedPosts();
 	}, [user]);
 
-	// Show loading state during auth check
 	if (!isLoaded || !user) {
 		return (
 			<div className="min-h-screen flex items-center justify-center ">
@@ -114,6 +104,7 @@ export default function SavedPostsPage() {
 			</div>
 		);
 	}
+
 	return (
 		<div className="container mx-auto px-4 py-8 max-w-7xl">
 			<h1 className="text-3xl font-bold mb-0.01 text-center">
