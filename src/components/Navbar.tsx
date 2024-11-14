@@ -31,6 +31,17 @@ import { DialogTitle } from "@radix-ui/react-dialog";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { Post } from "@/components/types/post";
 import { useTheme } from "next-themes"; // Import useTheme
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface DockItem {
 	title: string;
@@ -62,12 +73,9 @@ const Navbar: React.FC = () => {
 		clerk.signOut();
 	};
 
-	const handleDeleteAccount = async () => {
-		const confirmDelete = window.confirm(
-			"Are you sure you want to delete your account?"
-		);
-		if (!confirmDelete) return;
+	const [isAlertOpen, setIsAlertOpen] = useState(false);
 
+	const handleDeleteAccount = async () => {
 		try {
 			await fetch("/api/deleteAccount", {
 				method: "DELETE",
@@ -143,7 +151,7 @@ const Navbar: React.FC = () => {
 							},
 							{
 								title: "Delete Account",
-								onClick: handleDeleteAccount,
+								onClick: () => setIsAlertOpen(true),
 								icon: <IconTrash className="h-5 w-5" />,
 							},
 						],
@@ -156,17 +164,6 @@ const Navbar: React.FC = () => {
 						href: "/signin",
 					},
 				]),
-		// Theme Toggle Item
-		// {
-		// 	title: "Toggle Theme",
-		// 	icon:
-		// 		currentTheme === "dark" ? (
-		// 			<IconSun className="h-6 w-6" />
-		// 		) : (
-		// 			<IconMoon className="h-6 w-6" />
-		// 		),
-		// 	onClick: toggleTheme,
-		// },
 	];
 
 	// Fetch posts when the command dialog opens
@@ -195,7 +192,7 @@ const Navbar: React.FC = () => {
 		"bg-zinc-900/80 backdrop-blur-md border border-zinc-800 px-6 py-3"; // Increased padding
 
 	const commandDialogClasses =
-		"bg-zinc-900/95 border border-zinc-800 backdrop-blur-sm";
+		"bg-zinc-900/70 border border-zinc-800 backdrop-blur-md rounded-xl";
 
 	const commandItemStyle = `
     text-zinc-300 
@@ -248,6 +245,28 @@ const Navbar: React.FC = () => {
 					</CommandList>
 				</div>
 			</CommandDialog>
+
+			{/* AlertDialog for Delete Account */}
+			<AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+				<AlertDialogTrigger asChild>{/* Hidden trigger */}</AlertDialogTrigger>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>
+							Are you sure you want to delete your account?
+						</AlertDialogTitle>
+						<AlertDialogDescription>
+							This action cannot be undone. This will permanently delete your
+							account and remove your data from our servers.
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogCancel>Cancel</AlertDialogCancel>
+						<AlertDialogAction onClick={handleDeleteAccount}>
+							Continue
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
 		</>
 	);
 };
