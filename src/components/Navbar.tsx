@@ -4,6 +4,7 @@
 import { FloatingDock } from "@/components/ui/floating-dock";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
+import { useToast } from "@/components/hooks/use-toast";
 import {
 	IconHome,
 	IconSearch,
@@ -47,6 +48,7 @@ const Navbar: React.FC = () => {
 	const [commandInputValue, setCommandInputValue] = useState("");
 	const [searchResults, setSearchResults] = useState<Post[]>([]);
 	const [isLoadingSearch, setIsLoadingSearch] = useState(false);
+	const { toast } = useToast();
 
 	const { setTheme, theme, resolvedTheme } = useTheme();
 	const currentTheme = (theme === "system" ? resolvedTheme : theme) ?? "light";
@@ -70,12 +72,19 @@ const Navbar: React.FC = () => {
 			await fetch("/api/deleteAccount", {
 				method: "DELETE",
 			});
+			toast({
+				title: "Success",
+				description: "Account deleted successfully!",
+			});
 			await clerk.signOut();
-			alert("Account deleted successfully.");
 			router.push("/");
 		} catch (error) {
 			console.error("Delete account error:", error);
-			alert("Failed to delete account.");
+			toast({
+				title: "Error",
+				description: "Failed to delete account.",
+				variant: "destructive",
+			});
 		}
 	};
 
