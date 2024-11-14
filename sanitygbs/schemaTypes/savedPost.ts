@@ -1,5 +1,4 @@
 // schemas/savedPost.ts
-
 import {defineType, defineField, ReferenceRule, DatetimeRule} from 'sanity'
 
 export default defineType({
@@ -46,7 +45,7 @@ export default defineType({
   ],
   preview: {
     select: {
-      userName: 'user.name', // Use dot notation to access the name
+      userName: 'user.name',
       userImage: 'user.image',
       posts: 'posts',
     },

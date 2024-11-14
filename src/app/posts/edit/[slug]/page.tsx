@@ -240,7 +240,7 @@ const EditPost: React.FC<EditPostProps> = ({ params }) => {
 				title: "Success",
 				description: "Post updated successfully!",
 			});
-			router.push(`/posts/${slug}`); // Redirect to the new slug
+			router.push(`/`); // Redirect to the new slug
 		} catch (error: any) {
 			console.error("Failed to update post in Sanity:", error);
 			toast({

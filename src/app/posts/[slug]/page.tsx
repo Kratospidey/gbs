@@ -82,26 +82,26 @@ const PostDetailPage = () => {
 			try {
 				const data = await client.fetch(
 					`
-          *[_type == "post" && slug.current == $slug][0]{
-            _id,
-            title,
-            status,
-            body{
-              _type,
-              content
-            },
-            publishedAt,
-            mainImage{
-              asset->{url}
-            },
-            "author": {
-              "name": author->name,
-              "clerk_id": author->clerk_id,
-              "image": author->image,
-            },
-            tags,
-            "estimatedReadingTime": round(length(body.content) / 5 / 180)
-          }
+            *[_type == "post" && slug.current == $slug][0]{
+              _id,
+              title,
+              status,
+              body{
+                _type,
+                content
+              },
+              publishedAt,
+              mainImage{
+                asset->{url}
+              },
+              "author": {
+                "name": author->name,
+                "clerk_id": author->clerk_id,
+                "image": author->image,
+              },
+              tags,
+              "estimatedReadingTime": round(length(body.content) / 5 / 180)
+            }
           `,
 					{ slug }
 				);
@@ -140,15 +140,20 @@ const PostDetailPage = () => {
 					);
 
 					if (author) {
-						// Check if the post is saved
+						// Fetch the savedPost document for the author
 						const savedPostDoc = await client.fetch(
-							`*[_type == "savedPost" && user._ref == $authorId && $postId in posts[].post._ref][0]`,
+							`*[_type == "savedPost" && user._ref == $authorId][0]`,
 							{
 								authorId: author._id,
-								postId: data._id,
 							}
 						);
-						setIsSaved(!!savedPostDoc);
+
+						// Check if the post is already saved
+						const isPostSaved = savedPostDoc
+							? savedPostDoc.posts.some((p: any) => p.post._ref === data._id)
+							: false;
+
+						setIsSaved(isPostSaved);
 					} else {
 						setIsSaved(false);
 					}
@@ -207,7 +212,7 @@ const PostDetailPage = () => {
 				return;
 			}
 
-			// Check if a savedPost document exists for this user
+			// Fetch the existing savedPost document for the author
 			const savedPostDoc = await client.fetch(
 				`*[_type == "savedPost" && user._ref == $authorId][0]`,
 				{
@@ -215,27 +220,38 @@ const PostDetailPage = () => {
 				}
 			);
 
+			console.log("SavedPostDoc:", savedPostDoc);
+
 			if (savedPostDoc) {
-				const postIndex = savedPostDoc.posts.findIndex(
+				// Check if the post is already saved
+				const postExists = savedPostDoc.posts.some(
 					(p: any) => p.post._ref === post._id
 				);
 
-				if (postIndex > -1) {
-					// Remove the post from saved posts
-					await client
-						.patch(savedPostDoc._id)
-						.unset([`posts[${postIndex}]`])
-						.commit();
+				if (postExists) {
+					// Find the index of the post to remove
+					const postIndex = savedPostDoc.posts.findIndex(
+						(p: any) => p.post._ref === post._id
+					);
 
-					setIsSaved(false);
-					toast({
-						title: "Success",
-						description: "Removed from your saved posts!",
-						variant: "default",
-					});
+					if (postIndex > -1) {
+						// Remove the post from saved posts
+						await client
+							.patch(savedPostDoc._id)
+							.unset([`posts[${postIndex}]`])
+							.commit();
+						console.log("Post removed from saved posts.");
+
+						setIsSaved(false);
+						toast({
+							title: "Success",
+							description: "Removed from your saved posts!",
+							variant: "default",
+						});
+					}
 				} else {
 					// Add the post to saved posts
-					await client
+					const updatedDoc = await client
 						.patch(savedPostDoc._id)
 						.append("posts", [
 							{
@@ -249,6 +265,7 @@ const PostDetailPage = () => {
 							},
 						])
 						.commit();
+					console.log("Post added to saved posts:", updatedDoc);
 
 					setIsSaved(true);
 					toast({
@@ -258,8 +275,8 @@ const PostDetailPage = () => {
 					});
 				}
 			} else {
-				// Create a new savedPost document for the user
-				await client.create({
+				// Create a new savedPost document for the user with an initialized 'posts' array
+				const newSavedPost = await client.create({
 					_type: "savedPost",
 					user: {
 						_type: "reference",
@@ -277,6 +294,7 @@ const PostDetailPage = () => {
 						},
 					],
 				});
+				console.log("New savedPost created:", newSavedPost);
 
 				setIsSaved(true);
 				toast({
@@ -285,7 +303,7 @@ const PostDetailPage = () => {
 					variant: "default",
 				});
 			}
-		} catch (error) {
+		} catch (error: any) {
 			console.error("Error saving post:", error);
 			toast({
 				title: "Error",

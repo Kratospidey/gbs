@@ -35,12 +35,12 @@ interface SavedPost {
 }
 
 interface SavedPostCardProps {
-	post: SavedPost;
+	savedPost: SavedPost;
 }
 
-const SavedPostCard: React.FC<SavedPostCardProps> = ({ post }) => {
+const SavedPostCard: React.FC<SavedPostCardProps> = ({ savedPost }) => {
 	const router = useRouter();
-	const { post: postData, savedAt } = post;
+	const { post: postData, savedAt } = savedPost;
 
 	const imageUrl = postData.mainImage?.asset?._ref
 		? urlFor(postData.mainImage).url()

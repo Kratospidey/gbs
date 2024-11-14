@@ -76,7 +76,7 @@ const CreatePost: React.FC = () => {
 		}
 
 		setErrors({});
-		const newErrors: { [key: string]: string } = {};
+		const newErrors: { title?: string; content?: string } = {};
 
 		if (!title.trim()) {
 			newErrors.title = "Title is required";
@@ -159,7 +159,7 @@ const CreatePost: React.FC = () => {
 			const finalStatus = status === "published" ? "pending" : status;
 
 			// Create the new post
-			const newPost = {
+			const newPost: any = {
 				_type: "post",
 				title,
 				slug: { _type: "slug", current: slug },
@@ -171,18 +171,19 @@ const CreatePost: React.FC = () => {
 					_type: "reference",
 					_ref: authorId,
 				},
-				mainImage: imageAsset
-					? {
-							_type: "image",
-							asset: {
-								_type: "reference",
-								_ref: imageAsset._id,
-							},
-						}
-					: null,
 				tags: tags,
 				publishedAt: new Date().toISOString(),
 				status: finalStatus,
+				// Conditionally include mainImage if imageAsset exists
+				...(imageAsset && {
+					mainImage: {
+						_type: "image",
+						asset: {
+							_type: "reference",
+							_ref: imageAsset._id,
+						},
+					},
+				}),
 			};
 
 			await client.create(newPost);
