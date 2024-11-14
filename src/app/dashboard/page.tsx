@@ -1,4 +1,3 @@
-// src/app/page.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -99,7 +98,7 @@ const DashboardPage: React.FC = () => {
 		fetchPosts();
 	}, [user, filter, toast]);
 
-	const handleDelete = async (postId: string, imageUrl: string | undefined) => {
+	const handleDelete = async (postId: string) => {
 		const confirmDelete = window.confirm(
 			"Are you sure you want to delete this post?"
 		);
@@ -107,12 +106,31 @@ const DashboardPage: React.FC = () => {
 
 		setIsLoading(true);
 		try {
-			await client.delete(postId);
-			setPosts(posts.filter((post) => post._id !== postId));
-			toast({
-				title: "Success",
-				description: "Post deleted successfully!",
+			const response = await fetch("/api/posts/delete", {
+				method: "POST", // Changed from DELETE to POST
+				headers: {
+					"Content-Type": "application/json",
+				},
+				credentials: "include", // Include cookies for authentication
+				body: JSON.stringify({ postId }),
 			});
+
+			const data = await response.json();
+
+			if (response.ok) {
+				setPosts(posts.filter((post) => post._id !== postId));
+				toast({
+					title: "Success",
+					description: "Post deleted successfully!",
+				});
+			} else {
+				console.error("Error deleting post: ", data.error);
+				toast({
+					title: "Error",
+					description: data.error || "Failed to delete post.",
+					variant: "destructive",
+				});
+			}
 		} catch (error) {
 			console.error("Error deleting post: ", error);
 			toast({
@@ -241,7 +259,7 @@ const DashboardPage: React.FC = () => {
 									status: post.status,
 									tags: post.tags,
 								}}
-								onDelete={(id) => handleDelete(id, post.mainImage?.asset?.url)}
+								onDelete={(id) => handleDelete(id)}
 								onArchive={handleArchive}
 								onUnarchive={handleUnarchive}
 								onEdit={handleEdit}

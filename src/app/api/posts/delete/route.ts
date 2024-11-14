@@ -1,10 +1,8 @@
-// src/app/api/delete/route.ts
-
 import { NextResponse, NextRequest } from "next/server";
 import client from "@/lib/sanityClient";
 import { getAuth } from "@clerk/nextjs/server";
 
-export async function DELETE(request: NextRequest) {
+export async function POST(request: NextRequest) {
 	try {
 		const { userId } = getAuth(request);
 
@@ -14,9 +12,9 @@ export async function DELETE(request: NextRequest) {
 
 		const { postId } = await request.json();
 
-		// Verify post ownership
+		// Verify post ownership by matching author->clerk_id
 		const post = await client.fetch(
-			`*[_type == "post" && _id == $postId && author._ref == $userId][0]`,
+			`*[_type == "post" && _id == $postId && author->clerk_id == $userId][0]`,
 			{ postId, userId }
 		);
 
@@ -34,13 +32,40 @@ export async function DELETE(request: NextRequest) {
 		if (post.mainImage?.asset?._ref) {
 			const assetRef: string = post.mainImage.asset._ref;
 			transaction.delete(assetRef);
+			console.log(`Deleted image asset: ${assetRef}`);
 		}
 
 		// Delete the post document
 		transaction.delete(postId);
+		console.log(`Deleted post document: ${postId}`);
+
+		// Fetch savedPost documents containing the postId
+		const savedPosts = await client.fetch(
+			`*[_type == "savedPost" && posts[post._ref == $postId]]`,
+			{ postId }
+		);
+
+		console.log(
+			`Found ${savedPosts.length} savedPost document(s) containing postId ${postId}.`
+		);
+
+		// Iterate through each savedPost and remove the specific post reference
+		savedPosts.forEach((savedPost: any) => {
+			const updatedPosts = savedPost.posts.filter(
+				(p: any) => p.post._ref !== postId
+			);
+
+			console.log(
+				`Updating savedPost ${savedPost._id}: Removing postId ${postId}.`
+			);
+
+			// Corrected patch usage
+			transaction.patch(savedPost._id, { set: { posts: updatedPosts } });
+		});
 
 		// Commit the transaction
 		await transaction.commit();
+		console.log("Transaction committed successfully.");
 
 		return NextResponse.json({ success: true });
 	} catch (error: any) {

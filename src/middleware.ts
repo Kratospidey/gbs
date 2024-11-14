@@ -8,5 +8,6 @@ export const config = {
 		"/",
 		"/(api|trpc)(.*)",
 		"/api/deleteAccount",
+		"/api/posts/delete",
 	],
 };
