@@ -18,56 +18,53 @@ export async function DELETE(request: NextRequest) {
 	}
 
 	try {
-		// Step 2: Fetch the author document using clerk_id
+		// Step 2: Fetch the author document using the Clerk ID
 		const authorDoc = await sanityClient.fetch(
 			`*[_type == "author" && clerk_id == $userId][0]{ _id }`,
 			{ userId }
 		);
 
-		if (!authorDoc) {
-			// If no author document is found, proceed to delete savedPosts and user
+		if (!authorDoc || !authorDoc._id) {
 			console.warn(`No author document found for userId: ${userId}`);
 		}
 
-		// Step 3: Fetch savedPost documents to delete
-		const savedPostsToDelete = await sanityClient.fetch(
-			`*[_type == "savedPost" && user == $userId]{_id}`,
-			{ userId }
-		);
-
-		// Step 4: Initialize a Sanity transaction
+		// Step 3: Initialize a Sanity transaction to delete associated documents
 		let transaction = sanityClient.transaction();
 
-		// Step 5: Delete savedPost documents
+		// Step 4: Fetch and delete savedPost documents associated with the author
+		const savedPostsToDelete = await sanityClient.fetch(
+			`*[_type == "savedPost" && user._ref == $authorId]{ _id }`,
+			{ authorId: authorDoc._id }
+		);
+
 		savedPostsToDelete.forEach((savedPost: { _id: string }) => {
 			transaction = transaction.delete(savedPost._id);
 		});
 
-		// Step 6: If author document exists, proceed to delete their posts and the author document
-		if (authorDoc && authorDoc._id) {
-			// Fetch all posts authored by this author
-			const postsToDelete = await sanityClient.fetch(
-				`*[_type == "post" && author._ref == $authorId]{_id}`,
-				{ authorId: authorDoc._id }
-			);
+		// Step 5: Fetch and delete all posts authored by the author
+		const postsToDelete = await sanityClient.fetch(
+			`*[_type == "post" && author._ref == $authorId]{ _id }`,
+			{ authorId: authorDoc._id }
+		);
 
-			// Delete each post
-			postsToDelete.forEach((post: { _id: string }) => {
-				transaction = transaction.delete(post._id);
-			});
+		postsToDelete.forEach((post: { _id: string }) => {
+			transaction = transaction.delete(post._id);
+		});
 
-			// Delete the author document
+		// Step 6: Delete the author document if it exists
+		if (authorDoc._id) {
 			transaction = transaction.delete(authorDoc._id);
 		}
 
-		// Step 7: Commit the transaction
+		// Step 7: Commit the transaction to delete all associated data in Sanity
 		await transaction.commit();
+		console.log("All associated documents deleted from Sanity.");
 
 		// Step 8: Delete the user from Clerk
 		await clerkClient.users.deleteUser(userId);
 
 		return NextResponse.json(
-			{ message: "Account deleted successfully" },
+			{ message: "Account and associated data deleted successfully" },
 			{ status: 200 }
 		);
 	} catch (error: any) {

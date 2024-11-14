@@ -1,6 +1,8 @@
+// src/app/api/profile/[username]/route.ts
 import { NextResponse } from "next/server";
-import client from "@/lib/sanityClient"; // Sanity client
-import groq from "groq"; // GROQ tagged template
+import client from "@/lib/sanityClient";
+import groq from "groq";
+import { getClerkUserByUsername } from "@/lib/getClerkUserByUsername";
 
 export async function GET(
 	request: Request,
@@ -8,7 +10,6 @@ export async function GET(
 ) {
 	try {
 		const { username } = params;
-		console.log("API: Fetching user", username);
 
 		const authorQuery = groq`*[_type == "author" && name == $username][0]{
             clerk_id,
@@ -28,15 +29,9 @@ export async function GET(
 		const author = await client.fetch(authorQuery, { username });
 
 		if (!author || !author.clerk_id) {
-			console.log("API: Author not found in Sanity or clerk_id missing.");
 			return NextResponse.json({ error: "User not found" }, { status: 404 });
 		}
 
-		console.log("API: Found author in Sanity:", author);
-
-		const email = author.email || "";
-
-		// Fetch published posts by author
 		const postsQuery = groq`*[
             _type == "post" &&
             references($authorId) &&
@@ -55,30 +50,39 @@ export async function GET(
                 firstName,
                 lastName
             }
-        }`;
+        } | order(publishedAt desc)`;
 
 		const posts = await client.fetch(postsQuery, { authorId: author._id });
 
-		console.log("API: Fetched posts:", posts);
+		const uniqueAuthorNames = Array.from(
+			new Set(posts.map((post: any) => post.author.name))
+		).filter((name): name is string => !!name);
 
-		// Enrich posts with author information
-		const enrichedPosts = posts.map((post: any) => ({
-			_id: post._id,
-			title: post.title,
-			slug: post.slug,
-			publishedAt: post.publishedAt,
-			mainImageUrl: post.mainImageUrl || null,
-			status: post.status,
-			tags: post.tags || [],
-			author: {
-				name: post.author?.name || username,
-				clerk_id: post.author?.clerk_id || "",
-				firstName: post.author?.firstName || "",
-				lastName: post.author?.lastName || "",
-			},
-		}));
+		const clerkUsers = await Promise.all(
+			uniqueAuthorNames.map((name) => getClerkUserByUsername(name))
+		);
 
-		// Prepare user data including email
+		const usernameToClerkUser: Record<string, any> = {};
+		clerkUsers.forEach((user) => {
+			if (user?.username && user.id) {
+				usernameToClerkUser[user.username] = user;
+			}
+		});
+
+		const enrichedPosts = posts.map((post: any) => {
+			const clerkUser = usernameToClerkUser[post.author.name];
+			return {
+				...post,
+				author: clerkUser
+					? {
+							username: clerkUser.username,
+							firstName: post.author.firstName || "",
+							lastName: post.author.lastName || "",
+						}
+					: post.author,
+			};
+		});
+
 		const user = {
 			name: author.name,
 			firstName: author.firstName,
@@ -93,17 +97,14 @@ export async function GET(
 			profilePicture: author.imageUrl
 				? `${author.imageUrl}?ver=${author._updatedAt}`
 				: "/default-avatar.png",
-			github: author.github || "",
-			linkedin: author.linkedin || "",
-			website: author.website || "",
-			email: email,
+			github: author.github,
+			linkedin: author.linkedin,
+			website: author.website,
+			email: author.email || "",
 		};
 
-		console.log("API: User data prepared successfully:", user);
-		console.log("API: Enriched Posts:", enrichedPosts);
-
 		return NextResponse.json(
-			{ user: user, posts: enrichedPosts },
+			{ user, posts: enrichedPosts },
 			{
 				status: 200,
 				headers: {
@@ -112,7 +113,6 @@ export async function GET(
 			}
 		);
 	} catch (error: any) {
-		console.error("API: Error fetching profile data:", error);
 		return NextResponse.json(
 			{ error: "Failed to fetch profile data." },
 			{ status: 500 }

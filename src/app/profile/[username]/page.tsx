@@ -20,12 +20,11 @@ interface UserProfile {
 	linkedin?: string;
 	website?: string;
 	name: string;
-	email: string; // Added email
+	email: string;
 }
 
 interface Author {
 	username: string;
-	clerk_id: string;
 	firstName: string;
 	lastName: string;
 }
@@ -35,10 +34,10 @@ interface UserPost {
 	title: string;
 	slug: string;
 	publishedAt: string;
-	mainImageUrl?: string; // Remove null
+	mainImageUrl?: string;
 	status: "pending" | "published" | "draft" | "archived";
 	tags?: string[];
-	author?: Author; // Updated to include firstName and lastName
+	author: Author;
 }
 
 const UserProfilePage = () => {
@@ -51,33 +50,42 @@ const UserProfilePage = () => {
 	useEffect(() => {
 		const fetchProfile = async () => {
 			try {
-				const res = await fetch(`/api/profile/${username}`);
-				const data = await res.json();
+				// Fetch user profile information
+				const resUser = await fetch(`/api/profile/${username}`);
+				const userData = await resUser.json();
 
-				if (!res.ok) throw new Error(data.error);
+				if (!resUser.ok) throw new Error(userData.error);
 
 				setUser({
-					...data.user,
-					firstName: data.user.firstName || "",
-					lastName: data.user.lastName || "",
-					email: data.user.email || "",
+					...userData.user,
+					firstName: userData.user.firstName || "",
+					lastName: userData.user.lastName || "",
+					email: userData.user.email || "",
 				});
 
-				const filteredPosts: UserPost[] = data.posts.map((post: any) => ({
-					_id: post._id,
-					title: post.title,
-					slug: post.slug,
-					publishedAt: post.publishedAt || new Date().toISOString(),
-					mainImageUrl: post.mainImageUrl || undefined, // Allow undefined without fallback
-					status: post.status || "published",
-					tags: post.tags || [],
-					author: {
-						username: post.author?.username || username,
-						clerk_id: post.author?.clerk_id || "",
-						firstName: post.author?.firstName || "",
-						lastName: post.author?.lastName || "",
-					},
-				}));
+				// Fetch all posts and filter by the author’s username
+				const resPosts = await fetch(`/api/posts`);
+				const postsData = await resPosts.json();
+
+				if (!resPosts.ok) throw new Error("Failed to fetch posts.");
+
+				// Filter posts by author’s username
+				const filteredPosts: UserPost[] = postsData.posts
+					.filter((post: any) => post.author.username === username)
+					.map((post: any) => ({
+						_id: post._id,
+						title: post.title,
+						slug: post.slug,
+						publishedAt: post.publishedAt || new Date().toISOString(),
+						mainImageUrl: post.mainImageUrl || undefined,
+						status: post.status || "published",
+						tags: post.tags || [],
+						author: {
+							username: post.author.username || username,
+							firstName: post.author.firstName || "",
+							lastName: post.author.lastName || "",
+						},
+					}));
 
 				setPosts(filteredPosts);
 			} catch (error) {
