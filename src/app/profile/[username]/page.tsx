@@ -35,7 +35,7 @@ interface UserPost {
 	title: string;
 	slug: string;
 	publishedAt: string;
-	mainImageUrl?: string;
+	mainImageUrl?: string; // Remove null
 	status: "pending" | "published" | "draft" | "archived";
 	tags?: string[];
 	author?: Author; // Updated to include firstName and lastName
@@ -68,7 +68,7 @@ const UserProfilePage = () => {
 					title: post.title,
 					slug: post.slug,
 					publishedAt: post.publishedAt || new Date().toISOString(),
-					mainImageUrl: post.mainImageUrl || "/default-thumbnail.jpg",
+					mainImageUrl: post.mainImageUrl || undefined, // Allow undefined without fallback
 					status: post.status || "published",
 					tags: post.tags || [],
 					author: {

@@ -11,19 +11,19 @@ export async function GET(
 		console.log("API: Fetching user", username);
 
 		const authorQuery = groq`*[_type == "author" && name == $username][0]{
-      clerk_id,
-      _id,
-      _updatedAt,
-      name, // Username field
-      firstName,
-      lastName,
-      bio,
-      "imageUrl": image.asset->url,
-      "github": coalesce(github, ""),
-      "linkedin": coalesce(linkedin, ""),
-      "website": coalesce(website, ""),
-      email
-    }`;
+            clerk_id,
+            _id,
+            _updatedAt,
+            name, // Username field
+            firstName,
+            lastName,
+            bio,
+            "imageUrl": image.asset->url,
+            "github": coalesce(github, ""),
+            "linkedin": coalesce(linkedin, ""),
+            "website": coalesce(website, ""),
+            email
+        }`;
 
 		const author = await client.fetch(authorQuery, { username });
 
@@ -38,24 +38,24 @@ export async function GET(
 
 		// Fetch published posts by author
 		const postsQuery = groq`*[
-  _type == "post" &&
-  references($authorId) &&
-  lower(status) == "published"
-]{
-  _id,
-  title,
-  "slug": slug.current,
-  publishedAt,
-  "mainImageUrl": coalesce(mainImage.asset->url, null),
-  status,
-  tags,
-  author->{
-    name,
-    clerk_id,
-    firstName,
-    lastName
-  }
-}`;
+            _type == "post" &&
+            references($authorId) &&
+            lower(status) == "published"
+        ]{
+            _id,
+            title,
+            "slug": slug.current,
+            publishedAt,
+            "mainImageUrl": coalesce(mainImage.asset->url, null), // Set to null if no image
+            status,
+            tags,
+            author->{
+                name,
+                clerk_id,
+                firstName,
+                lastName
+            }
+        }`;
 
 		const posts = await client.fetch(postsQuery, { authorId: author._id });
 
@@ -67,7 +67,7 @@ export async function GET(
 			title: post.title,
 			slug: post.slug,
 			publishedAt: post.publishedAt,
-			mainImageUrl: post.mainImageUrl || "/default-thumbnail.jpg",
+			mainImageUrl: post.mainImageUrl || null, // Remove fallback
 			status: post.status,
 			tags: post.tags || [],
 			author: {
@@ -118,5 +118,3 @@ export async function GET(
 		);
 	}
 }
-
-// fix code
